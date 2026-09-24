@@ -10,6 +10,7 @@ import { IconMenu, IconClose } from "@/components/Icons";
 const enlaces = [
   { href: "/admin", texto: "Panel", icono: "M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10" },
   { href: "/admin/agenda", texto: "Agenda", icono: "M8 2v3M16 2v3M3 9h18M5 5h14v16H5z" },
+  { href: "/admin/retoques", texto: "Retoques", icono: "M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0" },
   { href: "/admin/servicios", texto: "Servicios", icono: "M12 2l1.6 5.2L19 9l-5.4 1.8L12 16l-1.6-5.2L5 9l5.4-1.8z" },
   { href: "/admin/productos", texto: "Productos", icono: "M3 7l9-4 9 4-9 4zM3 7v10l9 4 9-4V7" },
   { href: "/admin/galeria", texto: "Galería", icono: "M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6" },

@@ -25,6 +25,9 @@ export async function crearCitaPublica(datos: DatosCita): Promise<RespuestaCita>
   if (!datos.nombre.trim()) {
     return { ok: false, error: "Escribe tu nombre." };
   }
+  if (!datos.telefono.trim()) {
+    return { ok: false, error: "El teléfono es obligatorio para agendar." };
+  }
   if (!datos.servicioId || !datos.fecha || !datos.hora) {
     return { ok: false, error: "Selecciona servicio, fecha y hora." };
   }

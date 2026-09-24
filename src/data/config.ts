@@ -26,8 +26,8 @@ export const site = {
   email: "",
 
   // Dirección física (opcional; deja "" para ocultarla hasta que la definas)
-  direccion: "",
-  ciudad: "Colombia",
+  direccion: "Calle 8 No. 12 C 58, Barrio Estero",
+  ciudad: "Villavicencio",
 
   // --- Horarios (edita a tu gusto; deja "" para ocultar una fila) ---
   horarios: [
@@ -51,6 +51,18 @@ export const site = {
  */
 export function waLink(mensaje?: string): string {
   const base = `https://wa.me/${site.whatsapp}`;
+  if (!mensaje) return base;
+  return `${base}?text=${encodeURIComponent(mensaje)}`;
+}
+
+/**
+ * Construye un enlace de WhatsApp hacia el número de una clienta.
+ * Normaliza números colombianos (agrega 57 si hace falta).
+ */
+export function waLinkTelefono(telefono: string, mensaje?: string): string {
+  let numero = (telefono || "").replace(/\D/g, "");
+  if (numero.length === 10 && numero.startsWith("3")) numero = "57" + numero;
+  const base = `https://wa.me/${numero}`;
   if (!mensaje) return base;
   return `${base}?text=${encodeURIComponent(mensaje)}`;
 }

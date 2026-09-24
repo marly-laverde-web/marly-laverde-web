@@ -22,7 +22,7 @@ export default async function AdminAgendaPage({
       .order("hora_inicio", { ascending: true }),
     supabase
       .from("servicios")
-      .select("id, nombre, categoria, duracion_min, precio")
+      .select("id, nombre, categoria, duracion_min, precio, intervalo_retoque_dias")
       .eq("activo", true)
       .order("categoria", { ascending: true })
       .order("nombre", { ascending: true }),

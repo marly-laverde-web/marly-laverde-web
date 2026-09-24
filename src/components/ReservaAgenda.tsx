@@ -64,6 +64,8 @@ export default function ReservaAgenda({ servicios }: { servicios: Servicio[] }) 
     e.preventDefault();
     setError("");
     if (!nombre.trim()) return setError("Por favor escribe tu nombre.");
+    if (!telefono.trim())
+      return setError("El teléfono es obligatorio para agendar.");
     if (!hora) return setError("Selecciona una hora disponible.");
 
     setEnviando(true);
@@ -235,7 +237,7 @@ Quedo atenta a la confirmación. ¡Gracias!`;
           </div>
           <div>
             <label htmlFor="r-tel" className="mb-1.5 block text-sm text-ink">
-              Teléfono (WhatsApp)
+              Teléfono (WhatsApp) <span className="text-rose">*</span>
             </label>
             <input
               id="r-tel"
@@ -244,6 +246,7 @@ Quedo atenta a la confirmación. ¡Gracias!`;
               onChange={(e) => setTelefono(e.target.value)}
               placeholder="Ej: 300 123 4567"
               className={inputBase}
+              required
             />
           </div>
           <div>

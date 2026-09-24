@@ -10,6 +10,7 @@ import {
   crearCitaAdmin,
   actualizarEstadoCita,
   eliminarCita,
+  finalizarCita,
 } from "@/app/admin/agenda/acciones";
 import EncabezadoAdmin from "./EncabezadoAdmin";
 import { IconWhatsApp } from "@/components/Icons";
@@ -60,6 +61,35 @@ export default function AdminAgenda({
   const [notas, setNotas] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
+
+  // Finalización de cita + próximo retoque
+  const [finalizando, setFinalizando] = useState<string | null>(null);
+  const [fechaRetoque, setFechaRetoque] = useState("");
+  const [conRetoque, setConRetoque] = useState(true);
+  const [notasRetoque, setNotasRetoque] = useState("");
+
+  function abrirFinalizar(c: any) {
+    const servicio = servicios.find((s) => s.id === c.servicio_id);
+    const intervalo = servicio?.intervalo_retoque_dias;
+    setFinalizando(c.id);
+    setConRetoque(Boolean(intervalo));
+    setFechaRetoque(intervalo ? sumarDias(c.fecha, intervalo) : "");
+    setNotasRetoque("");
+  }
+
+  async function confirmarFinalizar(c: any) {
+    const res = await finalizarCita(
+      c.id,
+      conRetoque && fechaRetoque ? fechaRetoque : null,
+      notasRetoque
+    );
+    if (res.ok) {
+      setFinalizando(null);
+      router.refresh();
+    } else {
+      alert(res.error);
+    }
+  }
 
   function irAFecha(f: string) {
     router.push(`/admin/agenda?fecha=${f}`);
@@ -244,8 +274,9 @@ export default function AdminAgenda({
             return (
               <div
                 key={c.id}
-                className="flex flex-col gap-3 rounded-2xl border border-line bg-white/70 p-4 sm:flex-row sm:items-center"
+                className="rounded-2xl border border-line bg-white/70 p-4"
               >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div className="w-28 shrink-0">
                   <p className="font-serif text-lg text-ink">{hhmm(c.hora_inicio)}</p>
                   <p className="text-xs text-muted">
@@ -283,7 +314,15 @@ export default function AdminAgenda({
                       </option>
                     ))}
                   </select>
-                  <div className="flex gap-3 text-xs">
+                  <div className="flex flex-wrap gap-3 text-xs">
+                    {c.estado !== "atendida" && c.estado !== "cancelada" && (
+                      <button
+                        onClick={() => abrirFinalizar(c)}
+                        className="font-semibold text-green-700 hover:underline"
+                      >
+                        Dar por terminado
+                      </button>
+                    )}
                     <Link href={cobroUrl} className="font-medium text-rose hover:underline">
                       Registrar cobro
                     </Link>
@@ -295,6 +334,64 @@ export default function AdminAgenda({
                     </button>
                   </div>
                 </div>
+                </div>
+
+                {finalizando === c.id && (
+                  <div className="mt-3 rounded-xl border border-green-200 bg-green-50/60 p-4">
+                    <p className="mb-2 font-medium text-ink">
+                      Finalizar servicio de {c.cliente_nombre}
+                    </p>
+                    <label className="flex items-center gap-2 text-sm text-ink">
+                      <input
+                        type="checkbox"
+                        checked={conRetoque}
+                        onChange={(e) => setConRetoque(e.target.checked)}
+                      />
+                      Programar próximo retoque
+                    </label>
+                    {conRetoque && (
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <label className="mb-1 block text-xs text-muted">
+                            Fecha del próximo retoque
+                          </label>
+                          <input
+                            type="date"
+                            value={fechaRetoque}
+                            min={fecha}
+                            onChange={(e) => setFechaRetoque(e.target.value)}
+                            className={input}
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs text-muted">
+                            Nota (opcional)
+                          </label>
+                          <input
+                            value={notasRetoque}
+                            onChange={(e) => setNotasRetoque(e.target.value)}
+                            className={input}
+                            placeholder="Ej: retoque de raíz"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={() => confirmarFinalizar(c)}
+                        className="btn-primario !py-2 !text-xs"
+                      >
+                        Confirmar y finalizar
+                      </button>
+                      <button
+                        onClick={() => setFinalizando(null)}
+                        className="text-xs text-muted hover:underline"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

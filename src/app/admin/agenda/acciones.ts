@@ -73,6 +73,50 @@ export async function actualizarEstadoCita(
   return { ok: true };
 }
 
+/**
+ * Da por terminado el servicio (estado "atendida") y, si se indica, programa
+ * el próximo retoque para hacer seguimiento a la clienta.
+ */
+export async function finalizarCita(
+  citaId: string,
+  fechaRetoque: string | null,
+  notas: string
+): Promise<Respuesta> {
+  const { supabase, user } = await clienteAutenticado();
+  if (!user) return { ok: false, error: "No autorizado" };
+
+  const { data: cita } = await supabase
+    .from("citas")
+    .select("*")
+    .eq("id", citaId)
+    .single();
+  if (!cita) return { ok: false, error: "Cita no encontrada." };
+
+  const { error } = await supabase
+    .from("citas")
+    .update({ estado: "atendida" })
+    .eq("id", citaId);
+  if (error) return { ok: false, error: "No se pudo finalizar la cita." };
+
+  if (fechaRetoque) {
+    await supabase.from("retoques").insert({
+      cliente_nombre: cita.cliente_nombre,
+      cliente_telefono: cita.cliente_telefono,
+      servicio_id: cita.servicio_id,
+      servicio_nombre: cita.servicio_nombre,
+      fecha_retoque: fechaRetoque,
+      estado: "pendiente",
+      cita_origen_id: citaId,
+      notas: notas.trim(),
+    });
+  }
+
+  revalidatePath("/admin/agenda");
+  revalidatePath("/admin/retoques");
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
 export async function eliminarCita(id: string): Promise<Respuesta> {
   const { supabase, user } = await clienteAutenticado();
   if (!user) return { ok: false, error: "No autorizado" };

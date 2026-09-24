@@ -69,7 +69,15 @@ export default function Footer() {
             {site.direccion && (
               <li className="flex items-start gap-2">
                 <IconMapPin className="mt-0.5 h-4 w-4 shrink-0 text-rose" />
-                <span>{site.direccion}</span>
+                <span>
+                  {site.direccion}
+                  {site.ciudad && (
+                    <>
+                      <br />
+                      {site.ciudad}
+                    </>
+                  )}
+                </span>
               </li>
             )}
             <li>

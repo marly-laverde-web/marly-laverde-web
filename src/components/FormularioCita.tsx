@@ -24,6 +24,10 @@ export default function FormularioCita() {
       setError("Por favor completa tu nombre y el servicio que deseas.");
       return;
     }
+    if (!telefono.trim()) {
+      setError("El teléfono es obligatorio para agendar.");
+      return;
+    }
     setError("");
 
     const lineas = [
@@ -66,7 +70,7 @@ export default function FormularioCita() {
 
       <div>
         <label htmlFor="telefono" className="mb-1.5 block text-sm font-medium text-ink">
-          Teléfono (opcional)
+          Teléfono (WhatsApp) <span className="text-rose">*</span>
         </label>
         <input
           id="telefono"
@@ -75,6 +79,7 @@ export default function FormularioCita() {
           onChange={(e) => setTelefono(e.target.value)}
           placeholder="Ej: 300 123 4567"
           className={inputBase}
+          required
         />
       </div>
 

@@ -18,10 +18,18 @@ function fechaLegible(fecha: string) {
   return `${NOMBRES_DIAS[dt.getUTCDay()]} ${d}/${m}`;
 }
 
+function sumarDiasFecha(fecha: string, n: number) {
+  const [y, m, d] = fecha.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + n);
+  return dt.toISOString().split("T")[0];
+}
+
 export default async function DashboardPage() {
   const supabase = await crearClienteServidor();
   const hoy = ahoraColombia().fecha;
   const inicioMes = `${hoy.slice(0, 7)}-01T00:00:00-05:00`;
+  const limiteRetoque = sumarDiasFecha(hoy, 3);
 
   const [
     { data: citasHoy },
@@ -29,6 +37,7 @@ export default async function DashboardPage() {
     { data: ventasMes },
     { count: nServicios },
     { count: nProductos },
+    { data: retoquesProx },
   ] = await Promise.all([
     supabase.from("citas").select("*").eq("fecha", hoy).order("hora_inicio"),
     supabase
@@ -42,6 +51,12 @@ export default async function DashboardPage() {
     supabase.from("ventas").select("total, fecha, medio_pago").gte("fecha", inicioMes),
     supabase.from("servicios").select("*", { count: "exact", head: true }).eq("activo", true),
     supabase.from("productos").select("*", { count: "exact", head: true }).eq("activo", true),
+    supabase
+      .from("retoques")
+      .select("*")
+      .in("estado", ["pendiente", "recordada"])
+      .lte("fecha_retoque", limiteRetoque)
+      .order("fecha_retoque", { ascending: true }),
   ]);
 
   const totalMes = (ventasMes ?? []).reduce((a, v) => a + (v.total ?? 0), 0);
@@ -52,11 +67,12 @@ export default async function DashboardPage() {
     (c) => c.estado === "pendiente"
   ).length;
 
+  const nRetoques = (retoquesProx ?? []).length;
   const tarjetas = [
     { titulo: "Citas de hoy", valor: (citasHoy ?? []).length, sub: `${pendientes} pendientes` },
     { titulo: "Ingresos de hoy", valor: formatCOP(totalHoy), sub: "" },
     { titulo: "Ingresos del mes", valor: formatCOP(totalMes), sub: "" },
-    { titulo: "Servicios / Productos", valor: `${nServicios ?? 0} / ${nProductos ?? 0}`, sub: "activos" },
+    { titulo: "Retoques por avisar", valor: nRetoques, sub: "próximos 3 días" },
   ];
 
   return (
@@ -78,6 +94,31 @@ export default async function DashboardPage() {
           </div>
         ))}
       </div>
+
+      {/* Alerta de retoques */}
+      {nRetoques > 0 && (
+        <div className="mb-8 rounded-2xl border border-rose/40 bg-rose-soft/30 p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-serif text-lg text-ink">
+              🔔 Retoques por avisar ({nRetoques})
+            </h2>
+            <Link href="/admin/retoques" className="text-sm font-medium text-rose hover:underline">
+              Gestionar →
+            </Link>
+          </div>
+          <ul className="space-y-2 text-sm">
+            {(retoquesProx ?? []).slice(0, 5).map((r: any) => (
+              <li key={r.id} className="flex items-center gap-3">
+                <span className="w-24 text-muted">{fechaLegible(r.fecha_retoque)}</span>
+                <span className="flex-1">
+                  <span className="font-medium text-ink">{r.cliente_nombre}</span>
+                  <span className="text-muted"> · {r.servicio_nombre}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Citas de hoy */}

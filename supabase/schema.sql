@@ -111,6 +111,22 @@ create table if not exists ventas (
 );
 create index if not exists idx_ventas_fecha on ventas (fecha);
 
+-- Seguimiento de retoques / mantenimientos
+create table if not exists retoques (
+  id uuid primary key default gen_random_uuid(),
+  cliente_nombre text not null,
+  cliente_telefono text default '',
+  servicio_id uuid references servicios(id) on delete set null,
+  servicio_nombre text not null,
+  fecha_retoque date not null,
+  estado text not null default 'pendiente'
+    check (estado in ('pendiente','recordada','agendada','cancelada')),
+  cita_origen_id uuid references citas(id) on delete set null,
+  notas text default '',
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_retoques_fecha on retoques (fecha_retoque);
+
 -- ---------------------------------------------------------------
 --  SEGURIDAD (Row Level Security)
 -- ---------------------------------------------------------------
@@ -122,6 +138,7 @@ alter table bloqueos      enable row level security;
 alter table configuracion enable row level security;
 alter table citas         enable row level security;
 alter table ventas        enable row level security;
+alter table retoques      enable row level security;
 
 -- Lectura pública (catálogos y horarios los ve todo el mundo)
 create policy "lectura publica servicios"     on servicios     for select using (true);
@@ -140,6 +157,7 @@ create policy "admin bloqueos"       on bloqueos      for all using (auth.role()
 create policy "admin configuracion"  on configuracion for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "admin citas"          on citas         for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "admin ventas"         on ventas        for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "admin retoques"       on retoques      for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 -- (Las citas creadas por clientas se insertan desde el servidor con la clave de
 --  servicio, que omite RLS de forma segura. Por eso no hay política anónima.)
 

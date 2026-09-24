@@ -35,7 +35,10 @@ export default function PrivacidadPage() {
           </p>
           <ul className="mt-2 list-disc space-y-1 pl-6 text-muted">
             <li>Razón social / NIT: [completar]</li>
-            <li>Dirección: {site.direccion || "[completar]"}</li>
+            <li>
+              Dirección: {site.direccion || "[completar]"}
+              {site.ciudad ? `, ${site.ciudad}` : ""}
+            </li>
             <li>Teléfono / WhatsApp: {site.telefonoVisible}</li>
             <li>Correo electrónico: {site.email || "[completar]"}</li>
           </ul>

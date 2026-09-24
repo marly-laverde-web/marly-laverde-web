@@ -49,6 +49,32 @@ export interface Venta {
   notas: string;
 }
 
+export type EstadoRetoque = "pendiente" | "recordada" | "agendada" | "cancelada";
+
+export const ESTADOS_RETOQUE: {
+  valor: EstadoRetoque;
+  etiqueta: string;
+  color: string;
+}[] = [
+  { valor: "pendiente", etiqueta: "Pendiente", color: "#c4a05a" },
+  { valor: "recordada", etiqueta: "Recordada", color: "#3b82f6" },
+  { valor: "agendada", etiqueta: "Agendada", color: "#16a34a" },
+  { valor: "cancelada", etiqueta: "Cancelada", color: "#9ca3af" },
+];
+
+export interface Retoque {
+  id: string;
+  cliente_nombre: string;
+  cliente_telefono: string;
+  servicio_id: string | null;
+  servicio_nombre: string;
+  fecha_retoque: string; // YYYY-MM-DD
+  estado: EstadoRetoque;
+  cita_origen_id: string | null;
+  notas: string;
+  created_at: string;
+}
+
 export interface Horario {
   dia_semana: number; // 0=Dom ... 6=Sab
   abierto: boolean;
