@@ -101,8 +101,9 @@ export default async function Home() {
             </h2>
             <p className="mt-4 leading-relaxed text-muted">
               Nos especializamos en transformar y cuidar tu cabello con técnicas
-              profesionales de color: balayage, mechas, corrección de color y
-              tratamientos que devuelven vida, brillo y salud a tu melena.
+              profesionales de color: Balayage, Air-Touch, French Highlights,
+              Foilayage, Babylights, Corrección de Color y tratamientos que
+              devuelven vida, brillo y salud a tu Cabello.
             </p>
             <ul className="mt-6 space-y-3">
               {[

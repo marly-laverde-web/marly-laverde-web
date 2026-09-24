@@ -20,12 +20,22 @@ export default function Header() {
     <header className="sticky top-0 z-40 border-b border-line/70 bg-cream/85 backdrop-blur-md">
       <div className="contenedor flex items-center justify-between py-4">
         {/* Logo */}
-        <Link href="/" className="group leading-tight" onClick={() => setAbierto(false)}>
-          <span className="block font-serif text-xl tracking-wide text-ink sm:text-2xl">
-            {site.nombre}
+        <Link href="/" className="group flex items-center gap-3" onClick={() => setAbierto(false)}>
+          <span className="block h-12 w-12 shrink-0 overflow-hidden rounded-full ring-1 ring-line sm:h-14 sm:w-14">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="Logo Marly Laverde Estudio de Belleza"
+              className="h-full w-full scale-[1.18] object-cover"
+            />
           </span>
-          <span className="block text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-rose">
-            {site.subtitulo}
+          <span className="leading-tight">
+            <span className="block font-serif text-lg tracking-wide text-ink sm:text-xl">
+              {site.nombre}
+            </span>
+            <span className="block text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-rose">
+              {site.subtitulo}
+            </span>
           </span>
         </Link>
 

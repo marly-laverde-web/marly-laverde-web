@@ -18,10 +18,22 @@ export default function Footer() {
       <div className="contenedor grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         {/* Marca */}
         <div>
-          <span className="block font-serif text-2xl text-ink">{site.nombre}</span>
-          <span className="mb-3 block text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-rose">
-            {site.subtitulo}
-          </span>
+          <div className="mb-3 flex items-center gap-3">
+            <span className="block h-14 w-14 shrink-0 overflow-hidden rounded-full ring-1 ring-line">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.png"
+                alt="Logo Marly Laverde Estudio de Belleza"
+                className="h-full w-full scale-[1.18] object-cover"
+              />
+            </span>
+            <span>
+              <span className="block font-serif text-2xl text-ink">{site.nombre}</span>
+              <span className="block text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-rose">
+                {site.subtitulo}
+              </span>
+            </span>
+          </div>
           <p className="text-sm leading-relaxed text-muted">{site.descripcion}</p>
           <div className="mt-4 flex gap-3">
             {site.redes.instagram && (
