@@ -1,0 +1,18 @@
+CARPETA DE FOTOS DE LA GALERÍA
+================================
+
+Coloca aquí las fotos de los trabajos realizados.
+
+Cómo usarlas:
+1. Copia tus fotos dentro de esta carpeta (public/galeria/).
+   Ejemplo: balayage-1.jpg, manicure-2.jpg, etc.
+
+2. Abre el archivo:  src/data/galeria.ts
+   y en cada foto escribe la ruta en el campo "imagen". Ejemplo:
+
+   { id: "g1", titulo: "Balayage luminoso", categoria: "Colorimetría",
+     imagen: "/galeria/balayage-1.jpg" },
+
+Recomendaciones:
+- Usa fotos horizontales o cuadradas de buena calidad.
+- Publica solo fotos autorizadas por la clienta.

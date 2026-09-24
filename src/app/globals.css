@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+/* =============================================================
+   SISTEMA DE DISEÑO — Estudio de Belleza Marly Laverde
+   Paleta elegante en tonos nude, rosa palo y dorado.
+   ============================================================= */
+@theme {
+  /* Colores de marca */
+  --color-cream: #fbf7f2;
+  --color-sand: #f4ebe2;
+  --color-ink: #2a2320;
+  --color-muted: #7a6c62;
+  --color-rose: #a76d6f;
+  --color-rose-dark: #834e50;
+  --color-rose-soft: #ecdad2;
+  --color-gold: #c4a05a;
+  --color-line: #e7ddd3;
+
+  /* Tipografías (se cargan en layout.tsx) */
+  --font-serif: var(--font-playfair), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-montserrat), system-ui, -apple-system, sans-serif;
+
+  /* Radios y sombras */
+  --radius-soft: 0.75rem;
+}
+
+/* --------- Base --------- */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: var(--color-rose-soft);
+  color: var(--color-rose-dark);
+}
+
+/* --------- Utilidades reutilizables --------- */
+.contenedor {
+  width: 100%;
+  max-width: 1180px;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+/* Botón principal (rosa) */
+.btn-primario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--color-rose);
+  color: #fff;
+  padding: 0.85rem 1.6rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  transition: background-color 0.25s ease, transform 0.15s ease;
+}
+.btn-primario:hover {
+  background-color: var(--color-rose-dark);
+  transform: translateY(-1px);
+}
+
+/* Botón secundario (contorno) */
+.btn-secundario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: transparent;
+  color: var(--color-ink);
+  padding: 0.85rem 1.6rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-ink);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+.btn-secundario:hover {
+  background-color: var(--color-ink);
+  color: var(--color-cream);
+}
+
+/* Botón WhatsApp (verde) */
+.btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  background-color: #25d366;
+  color: #ffffff;
+  padding: 0.85rem 1.6rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background-color 0.25s ease, transform 0.15s ease;
+}
+.btn-whatsapp:hover {
+  background-color: #1ebe5a;
+  transform: translateY(-1px);
+}
+
+/* Etiqueta pequeña tipo "kicker" */
+.kicker {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-rose);
+}
+
+/* Animación de aparición suave */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.aparecer {
+  animation: fadeUp 0.7s ease both;
+}
