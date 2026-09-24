@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { galeria } from "@/data/galeria";
+import { obtenerGaleria } from "@/lib/datos";
 import MediaElegante from "@/components/MediaElegante";
 import TituloSeccion from "@/components/TituloSeccion";
 
@@ -9,7 +9,10 @@ export const metadata: Metadata = {
     "Galería de trabajos realizados: colorimetría, tratamientos capilares, maquillaje y más.",
 };
 
-export default function GaleriaPage() {
+export const dynamic = "force-dynamic";
+
+export default async function GaleriaPage() {
+  const galeria = await obtenerGaleria();
   return (
     <>
       <section className="contenedor pt-16 pb-4">

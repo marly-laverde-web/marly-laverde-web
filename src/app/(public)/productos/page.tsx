@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { productosActivos } from "@/data/productos";
+import { obtenerProductos } from "@/lib/datos";
 import ProductoCard from "@/components/ProductoCard";
 import TituloSeccion from "@/components/TituloSeccion";
 
@@ -9,8 +9,10 @@ export const metadata: Metadata = {
     "Productos profesionales para el cuidado del cabello: shampoos, mascarillas, tratamientos y más.",
 };
 
-export default function ProductosPage() {
-  const items = productosActivos();
+export const dynamic = "force-dynamic";
+
+export default async function ProductosPage() {
+  const items = await obtenerProductos();
 
   // Agrupar por categoría manteniendo el orden de aparición
   const categorias = Array.from(new Set(items.map((p) => p.categoria)));

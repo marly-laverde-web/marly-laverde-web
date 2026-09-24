@@ -1,19 +1,22 @@
 import Link from "next/link";
 import { site, waLink, mensajeWhatsAppGeneral } from "@/data/config";
-import { serviciosActivos } from "@/data/servicios";
-import { productosActivos } from "@/data/productos";
-import { galeria } from "@/data/galeria";
+import { obtenerServicios, obtenerProductos, obtenerGaleria } from "@/lib/datos";
 import TituloSeccion from "@/components/TituloSeccion";
 import ServicioCard from "@/components/ServicioCard";
 import ProductoCard from "@/components/ProductoCard";
 import MediaElegante from "@/components/MediaElegante";
 import { IconWhatsApp, IconArrowRight, IconSparkle } from "@/components/Icons";
 
-export default function Home() {
-  const destacados = serviciosActivos().filter((s) => s.destacado).slice(0, 6);
-  const productosDestacados = productosActivos()
-    .filter((p) => p.destacado)
-    .slice(0, 3);
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const [servicios, productos, galeria] = await Promise.all([
+    obtenerServicios(),
+    obtenerProductos(),
+    obtenerGaleria(),
+  ]);
+  const destacados = servicios.filter((s) => s.destacado).slice(0, 6);
+  const productosDestacados = productos.filter((p) => p.destacado).slice(0, 3);
   const previewGaleria = galeria.slice(0, 6);
 
   return (

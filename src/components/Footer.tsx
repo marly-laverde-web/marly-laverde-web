@@ -107,9 +107,13 @@ export default function Footer() {
           <p>
             © {anio} {site.nombre} {site.subtitulo}. Todos los derechos reservados.
           </p>
-          <p>
+          <p className="flex items-center gap-3">
             <Link href="/privacidad" className="hover:text-rose">
               Política de tratamiento de datos (Ley 1581 de 2012)
+            </Link>
+            <span className="text-line">·</span>
+            <Link href="/admin" className="hover:text-rose">
+              Administración
             </Link>
           </p>
         </div>
