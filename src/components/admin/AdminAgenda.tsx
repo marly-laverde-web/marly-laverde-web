@@ -336,7 +336,9 @@ export default function AdminAgenda({
                     <a
                       href={waLinkTelefono(
                         c.cliente_telefono,
-                        `¡Hola ${c.cliente_nombre}! Te escribimos de ${site.nombre} sobre tu cita.`
+                        `¡Hola ${c.cliente_nombre}! Te escribimos de ${site.nombre} ${site.subtitulo} para recordarte que tienes agendada una cita de ${c.servicio_nombre} el ${fechaLegible(
+                          c.fecha
+                        )} a las ${hhmm(c.hora_inicio)}. ¡Te esperamos! 💗`
                       )}
                       target="_blank"
                       rel="noopener noreferrer"
