@@ -67,22 +67,14 @@ export default async function Home() {
           </div>
 
           {/* Collage decorativo */}
-          <div className="aparecer grid grid-cols-2 gap-4">
-            <div className="mt-8 space-y-4">
-              <div className="h-48 overflow-hidden rounded-2xl shadow-sm">
-                <MediaElegante alt="Colorimetría" etiqueta="Especialidad" titulo="Colorimetría" />
-              </div>
-              <div className="h-36 overflow-hidden rounded-2xl shadow-sm">
-                <MediaElegante alt="Manicure" etiqueta="Belleza" titulo="Manicure" />
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="h-36 overflow-hidden rounded-2xl shadow-sm">
-                <MediaElegante alt="Tratamientos" etiqueta="Cuidado" titulo="Tratamientos" />
-              </div>
-              <div className="h-48 overflow-hidden rounded-2xl shadow-sm">
-                <MediaElegante alt="Maquillaje" etiqueta="Realza" titulo="Maquillaje" />
-              </div>
+          <div className="aparecer relative mx-auto w-full max-w-md">
+            <div className="aspect-[3/4] overflow-hidden rounded-3xl shadow-lg ring-1 ring-line">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/portada.jpg"
+                alt="Resultado de colorimetría — Marly Laverde Estudio de Belleza"
+                className="h-full w-full object-cover"
+              />
             </div>
           </div>
         </div>
@@ -132,7 +124,26 @@ export default async function Home() {
           titulo="Lo más solicitado"
           subtitulo="Una selección de nuestros servicios favoritos. Explora el catálogo completo para conocer todo lo que ofrecemos."
         />
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+
+        {/* Categorías destacadas */}
+        <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+          {[
+            { titulo: "Colorimetría", etiqueta: "Especialidad" },
+            { titulo: "Tratamientos", etiqueta: "Cuidado" },
+            { titulo: "Manicure", etiqueta: "Belleza" },
+            { titulo: "Maquillaje", etiqueta: "Realza" },
+          ].map((cat) => (
+            <Link
+              key={cat.titulo}
+              href="/servicios"
+              className="block h-28 overflow-hidden rounded-2xl shadow-sm transition-transform hover:-translate-y-1"
+            >
+              <MediaElegante alt={cat.titulo} etiqueta={cat.etiqueta} titulo={cat.titulo} />
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {destacados.map((s) => (
             <ServicioCard key={s.id} servicio={s} />
           ))}
