@@ -2,12 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { descontarStock } from "@/lib/inventario";
 import type { EstadoCita, MedioPago } from "@/lib/tipos";
 
 export interface ItemCobro {
   descripcion: string;
   cantidad: number;
   precio: number;
+  producto_id?: string | null;
+  costo?: number;
 }
 
 export interface Respuesta {
@@ -164,17 +167,20 @@ export async function finalizarCita(
   if (error) return { ok: false, error: "No se pudo finalizar la cita." };
 
   // 2. Registrar el cobro (una fila de venta por cada ítem con valor)
-  const filas = opciones.items
-    .filter((it) => it.descripcion.trim() && it.precio > 0)
-    .map((it) => ({
-      descripcion: it.descripcion.trim(),
-      cliente_nombre: cita.cliente_nombre,
-      cliente_telefono: cita.cliente_telefono,
-      cantidad: it.cantidad || 1,
-      total: (it.cantidad || 1) * it.precio,
-      medio_pago: opciones.medioPago,
-      cita_id: citaId,
-    }));
+  const itemsValidos = opciones.items.filter(
+    (it) => it.descripcion.trim() && it.precio > 0
+  );
+  const filas = itemsValidos.map((it) => ({
+    descripcion: it.descripcion.trim(),
+    cliente_nombre: cita.cliente_nombre,
+    cliente_telefono: cita.cliente_telefono,
+    cantidad: it.cantidad || 1,
+    total: (it.cantidad || 1) * it.precio,
+    medio_pago: opciones.medioPago,
+    cita_id: citaId,
+    producto_id: it.producto_id ?? null,
+    costo_unitario: it.costo ?? 0,
+  }));
   if (filas.length > 0) {
     const { error: errVenta } = await supabase.from("ventas").insert(filas);
     if (errVenta) {
@@ -183,6 +189,8 @@ export async function finalizarCita(
         error: "La cita se finalizó, pero no se pudo registrar el cobro.",
       };
     }
+    // Descontar del inventario los productos vendidos
+    await descontarStock(supabase, itemsValidos);
   }
 
   // 3. Programar el próximo retoque (opcional)
@@ -204,6 +212,8 @@ export async function finalizarCita(
   revalidatePath("/admin/ventas");
   revalidatePath("/admin/reportes");
   revalidatePath("/admin/clientes");
+  revalidatePath("/admin/inventario");
+  revalidatePath("/admin/productos");
   revalidatePath("/admin");
   return { ok: true };
 }

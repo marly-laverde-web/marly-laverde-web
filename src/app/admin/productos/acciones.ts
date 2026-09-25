@@ -9,6 +9,8 @@ export interface DatosProducto {
   categoria: string;
   descripcion: string;
   precio: number | null;
+  costo: number;
+  stock: number;
   referencia: string | null;
   disponible: boolean;
   destacado: boolean;
@@ -45,6 +47,8 @@ export async function guardarProducto(d: DatosProducto): Promise<Respuesta> {
     categoria: d.categoria.trim() || "General",
     descripcion: d.descripcion.trim(),
     precio: d.precio,
+    costo: d.costo || 0,
+    stock: d.stock || 0,
     referencia: d.referencia?.trim() || null,
     disponible: d.disponible,
     destacado: d.destacado,

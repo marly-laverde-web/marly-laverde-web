@@ -33,7 +33,19 @@ export default function AdminReportes({
 
   const totalIngresos = ventas.reduce((a, v) => a + (v.total ?? 0), 0);
   const totalCompras = compras.reduce((a, c) => a + (c.valor ?? 0), 0);
-  const utilidad = totalIngresos - totalCompras;
+
+  // Separar ventas de productos y de servicios
+  const ventasProductos = ventas.filter((v) => v.producto_id);
+  const ingresosProductos = ventasProductos.reduce((a, v) => a + (v.total ?? 0), 0);
+  const costoProductos = ventasProductos.reduce(
+    (a, v) => a + (v.costo_unitario ?? 0) * (v.cantidad ?? 1),
+    0
+  );
+  const ingresosServicios = totalIngresos - ingresosProductos;
+
+  const utilidadProductos = ingresosProductos - costoProductos;
+  const utilidadServicios = ingresosServicios - totalCompras; // gastos = costos de operación
+  const utilidadTotal = utilidadServicios + utilidadProductos;
 
   // Compras agrupadas por categoría
   const comprasPorCategoria = (() => {
@@ -121,9 +133,16 @@ export default function AdminReportes({
         ["Reporte financiero"],
         ["Desde", desde, "Hasta", hasta],
         [],
+        ["Ingresos por servicios", ingresosServicios],
+        ["Gastos (compras)", totalCompras],
+        ["Utilidad de servicios", utilidadServicios],
+        [],
+        ["Ingresos por productos", ingresosProductos],
+        ["Costo de productos", costoProductos],
+        ["Utilidad de productos", utilidadProductos],
+        [],
+        ["UTILIDAD TOTAL", utilidadTotal],
         ["Ventas totales", totalIngresos],
-        ["Costos y gastos (compras)", totalCompras],
-        ["Utilidad", utilidad],
         [],
         ["Número de ventas", ventas.length],
         ["Citas atendidas", citas.length],
@@ -224,36 +243,55 @@ export default function AdminReportes({
         </button>
       </form>
 
-      {/* Resultado del período: Ventas − Compras = Utilidad */}
+      {/* Resultado del período: utilidad de servicios y de productos */}
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-line bg-white/70 p-5">
-          <p className="text-xs uppercase tracking-wider text-muted">Ventas totales</p>
-          <p className="mt-1 font-serif text-2xl text-green-700">
-            {formatCOP(totalIngresos)}
+          <p className="text-xs uppercase tracking-wider text-muted">
+            Utilidad de servicios
+          </p>
+          <p
+            className={`mt-1 font-serif text-2xl ${
+              utilidadServicios >= 0 ? "text-green-700" : "text-rose-dark"
+            }`}
+          >
+            {formatCOP(utilidadServicios)}
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Ingresos {formatCOP(ingresosServicios)} − gastos {formatCOP(totalCompras)}
           </p>
         </div>
         <div className="rounded-2xl border border-line bg-white/70 p-5">
           <p className="text-xs uppercase tracking-wider text-muted">
-            Costos y gastos (compras)
+            Utilidad de productos
           </p>
-          <p className="mt-1 font-serif text-2xl text-rose-dark">
-            {formatCOP(totalCompras)}
+          <p
+            className={`mt-1 font-serif text-2xl ${
+              utilidadProductos >= 0 ? "text-green-700" : "text-rose-dark"
+            }`}
+          >
+            {formatCOP(utilidadProductos)}
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Ventas {formatCOP(ingresosProductos)} − costo {formatCOP(costoProductos)}
           </p>
         </div>
         <div
           className={`rounded-2xl border p-5 ${
-            utilidad >= 0
+            utilidadTotal >= 0
               ? "border-green-300 bg-green-50/60"
               : "border-rose/40 bg-rose-soft/30"
           }`}
         >
-          <p className="text-xs uppercase tracking-wider text-muted">Utilidad</p>
+          <p className="text-xs uppercase tracking-wider text-muted">Utilidad total</p>
           <p
             className={`mt-1 font-serif text-2xl ${
-              utilidad >= 0 ? "text-green-700" : "text-rose-dark"
+              utilidadTotal >= 0 ? "text-green-700" : "text-rose-dark"
             }`}
           >
-            {formatCOP(utilidad)}
+            {formatCOP(utilidadTotal)}
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Ingresos totales {formatCOP(totalIngresos)}
           </p>
         </div>
       </div>

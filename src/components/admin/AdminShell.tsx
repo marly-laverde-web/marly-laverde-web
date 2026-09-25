@@ -14,6 +14,7 @@ const enlaces = [
   { href: "/admin/clientes", texto: "Clientas", icono: "M17 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9.5 11a4 4 0 100-8 4 4 0 000 8M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" },
   { href: "/admin/servicios", texto: "Servicios", icono: "M12 2l1.6 5.2L19 9l-5.4 1.8L12 16l-1.6-5.2L5 9l5.4-1.8z" },
   { href: "/admin/productos", texto: "Productos", icono: "M3 7l9-4 9 4-9 4zM3 7v10l9 4 9-4V7" },
+  { href: "/admin/inventario", texto: "Inventario", icono: "M3 4h18v4H3zM5 8v12h14V8M9 12h6" },
   { href: "/admin/galeria", texto: "Galería", icono: "M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6" },
   { href: "/admin/ventas", texto: "Ventas", icono: "M3 3v18h18M7 14l4-4 3 3 5-6" },
   { href: "/admin/compras", texto: "Compras", icono: "M6 2l1.5 3h9L18 2M3 6h18l-1.5 12a2 2 0 01-2 1.7H6.5a2 2 0 01-2-1.7z" },

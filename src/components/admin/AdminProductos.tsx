@@ -15,6 +15,8 @@ interface FormState {
   categoria: string;
   descripcion: string;
   precio: string;
+  costo: string;
+  stock: string;
   referencia: string;
   disponible: boolean;
   destacado: boolean;
@@ -27,6 +29,8 @@ const vacio: FormState = {
   categoria: "",
   descripcion: "",
   precio: "",
+  costo: "",
+  stock: "",
   referencia: "",
   disponible: true,
   destacado: false,
@@ -48,6 +52,8 @@ export default function AdminProductos({ inicial }: { inicial: any[] }) {
       categoria: p.categoria ?? "",
       descripcion: p.descripcion ?? "",
       precio: p.precio === null || p.precio === undefined ? "" : String(p.precio),
+      costo: p.costo ? String(p.costo) : "",
+      stock: p.stock ? String(p.stock) : "",
       referencia: p.referencia ?? "",
       disponible: !!p.disponible,
       destacado: !!p.destacado,
@@ -67,6 +73,8 @@ export default function AdminProductos({ inicial }: { inicial: any[] }) {
       categoria: form.categoria,
       descripcion: form.descripcion,
       precio: form.precio.trim() === "" ? null : Number(form.precio),
+      costo: Number(form.costo) || 0,
+      stock: Number(form.stock) || 0,
       referencia: form.referencia,
       disponible: form.disponible,
       destacado: form.destacado,
@@ -143,7 +151,7 @@ export default function AdminProductos({ inicial }: { inicial: any[] }) {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">
-                Precio (pesos)
+                Precio de venta (pesos)
               </label>
               <input
                 type="number"
@@ -152,6 +160,32 @@ export default function AdminProductos({ inicial }: { inicial: any[] }) {
                 placeholder="Vacío = Consultar"
                 value={form.precio}
                 onChange={(e) => setForm({ ...form, precio: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-ink">
+                Costo (valor de compra)
+              </label>
+              <input
+                type="number"
+                min="0"
+                className={input}
+                placeholder="0"
+                value={form.costo}
+                onChange={(e) => setForm({ ...form, costo: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-ink">
+                Stock (existencias)
+              </label>
+              <input
+                type="number"
+                min="0"
+                className={input}
+                placeholder="0"
+                value={form.stock}
+                onChange={(e) => setForm({ ...form, stock: e.target.value })}
               />
             </div>
             <div>
@@ -165,6 +199,15 @@ export default function AdminProductos({ inicial }: { inicial: any[] }) {
               />
             </div>
           </div>
+
+          {form.precio && form.costo && (
+            <p className="text-sm text-muted">
+              Ganancia por unidad:{" "}
+              <strong className="text-green-700">
+                {formatCOP(Number(form.precio) - Number(form.costo))}
+              </strong>
+            </p>
+          )}
 
           <div>
             <label className="mb-1 block text-sm font-medium text-ink">Foto</label>
@@ -221,6 +264,7 @@ export default function AdminProductos({ inicial }: { inicial: any[] }) {
               <th className="px-4 py-3">Producto</th>
               <th className="px-4 py-3">Categoría</th>
               <th className="px-4 py-3">Precio</th>
+              <th className="px-4 py-3 text-center">Stock</th>
               <th className="px-4 py-3">Estado</th>
               <th className="px-4 py-3 text-right">Acciones</th>
             </tr>
@@ -228,7 +272,7 @@ export default function AdminProductos({ inicial }: { inicial: any[] }) {
           <tbody>
             {inicial.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted">
                   Aún no hay productos.
                 </td>
               </tr>
@@ -238,6 +282,19 @@ export default function AdminProductos({ inicial }: { inicial: any[] }) {
                 <td className="px-4 py-3 font-medium text-ink">{p.nombre}</td>
                 <td className="px-4 py-3 text-muted">{p.categoria}</td>
                 <td className="px-4 py-3">{formatCOP(p.precio)}</td>
+                <td className="px-4 py-3 text-center">
+                  <span
+                    className={`font-medium ${
+                      (p.stock ?? 0) <= 0
+                        ? "text-rose-dark"
+                        : (p.stock ?? 0) <= 3
+                          ? "text-gold"
+                          : "text-ink"
+                    }`}
+                  >
+                    {p.stock ?? 0}
+                  </span>
+                </td>
                 <td className="px-4 py-3">
                   <span className="flex flex-wrap gap-1">
                     <span

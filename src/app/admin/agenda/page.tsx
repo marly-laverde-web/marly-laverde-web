@@ -29,7 +29,7 @@ export default async function AdminAgendaPage({
         .order("nombre", { ascending: true }),
       supabase
         .from("productos")
-        .select("nombre, precio")
+        .select("id, nombre, precio, costo")
         .eq("activo", true)
         .order("nombre", { ascending: true }),
       supabase

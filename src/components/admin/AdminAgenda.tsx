@@ -96,8 +96,18 @@ export default function AdminAgenda({
 
   // Catálogo para agregar ítems al cobro (servicios + productos)
   const catalogoCobro = [
-    ...servicios.map((s) => ({ nombre: s.nombre, precio: s.precio })),
-    ...productos.map((p) => ({ nombre: p.nombre, precio: p.precio })),
+    ...servicios.map((s) => ({
+      nombre: s.nombre,
+      precio: s.precio,
+      productoId: null as string | null,
+      costo: 0,
+    })),
+    ...productos.map((p) => ({
+      nombre: p.nombre,
+      precio: p.precio,
+      productoId: p.id as string,
+      costo: p.costo ?? 0,
+    })),
   ];
 
   function abrirFinalizar(c: any) {
@@ -113,12 +123,20 @@ export default function AdminAgenda({
     setNotasRetoque("");
   }
 
-  function agregarDelCatalogo(valor: string) {
-    if (!valor) return;
-    const sep = valor.lastIndexOf("||");
-    const nombre = valor.slice(0, sep);
-    const precio = Number(valor.slice(sep + 2)) || 0;
-    setItems((prev) => [...prev, { descripcion: nombre, cantidad: 1, precio }]);
+  function agregarDelCatalogo(idx: string) {
+    if (idx === "") return;
+    const c = catalogoCobro[Number(idx)];
+    if (!c) return;
+    setItems((prev) => [
+      ...prev,
+      {
+        descripcion: c.nombre,
+        cantidad: 1,
+        precio: c.precio ?? 0,
+        producto_id: c.productoId,
+        costo: c.costo ?? 0,
+      },
+    ]);
   }
   function agregarManual() {
     setItems((prev) => [...prev, { descripcion: "", cantidad: 1, precio: 0 }]);
@@ -622,7 +640,7 @@ export default function AdminAgenda({
                       >
                         <option value="">+ Agregar del catálogo…</option>
                         {catalogoCobro.map((x, i) => (
-                          <option key={i} value={`${x.nombre}||${x.precio ?? 0}`}>
+                          <option key={i} value={String(i)}>
                             {x.nombre}
                             {x.precio ? ` — ${formatCOP(x.precio)}` : ""}
                           </option>

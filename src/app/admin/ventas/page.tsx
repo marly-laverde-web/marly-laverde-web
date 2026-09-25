@@ -29,12 +29,22 @@ export default async function AdminVentasPage({
         .gte("fecha", inicioMes)
         .order("fecha", { ascending: false }),
       supabase.from("servicios").select("nombre, precio").eq("activo", true),
-      supabase.from("productos").select("nombre, precio").eq("activo", true),
+      supabase.from("productos").select("id, nombre, precio, costo").eq("activo", true),
     ]);
 
   const catalogo = [
-    ...(servicios ?? []).map((s) => ({ nombre: s.nombre, precio: s.precio })),
-    ...(productos ?? []).map((p) => ({ nombre: p.nombre, precio: p.precio })),
+    ...(servicios ?? []).map((s) => ({
+      nombre: s.nombre,
+      precio: s.precio,
+      productoId: null as string | null,
+      costo: 0,
+    })),
+    ...(productos ?? []).map((p) => ({
+      nombre: p.nombre,
+      precio: p.precio,
+      productoId: p.id as string,
+      costo: p.costo ?? 0,
+    })),
   ];
 
   return (

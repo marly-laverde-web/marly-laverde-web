@@ -48,7 +48,12 @@ export default function AdminVentas({
   prefill,
 }: {
   ventas: any[];
-  catalogo: { nombre: string; precio: number | null }[];
+  catalogo: {
+    nombre: string;
+    precio: number | null;
+    productoId: string | null;
+    costo: number;
+  }[];
   hoy: string;
   prefill: Prefill;
 }) {
@@ -76,12 +81,20 @@ export default function AdminVentas({
   for (const v of ventas) porMedio[v.medio_pago] = (porMedio[v.medio_pago] ?? 0) + v.total;
 
   // Ítems del cobro
-  function agregarDelCatalogo(valor: string) {
-    if (!valor) return;
-    const sep = valor.lastIndexOf("||");
-    const nombre = valor.slice(0, sep);
-    const precio = Number(valor.slice(sep + 2)) || 0;
-    setItems((prev) => [...prev, { descripcion: nombre, cantidad: 1, precio }]);
+  function agregarDelCatalogo(idx: string) {
+    if (idx === "") return;
+    const c = catalogo[Number(idx)];
+    if (!c) return;
+    setItems((prev) => [
+      ...prev,
+      {
+        descripcion: c.nombre,
+        cantidad: 1,
+        precio: c.precio ?? 0,
+        producto_id: c.productoId,
+        costo: c.costo ?? 0,
+      },
+    ]);
   }
   function agregarManual() {
     setItems((prev) => [...prev, { descripcion: "", cantidad: 1, precio: 0 }]);
@@ -260,7 +273,7 @@ export default function AdminVentas({
                 >
                   <option value="">+ Agregar del catálogo…</option>
                   {catalogo.map((c, i) => (
-                    <option key={i} value={`${c.nombre}||${c.precio ?? 0}`}>
+                    <option key={i} value={String(i)}>
                       {c.nombre}
                       {c.precio ? ` — ${formatCOP(c.precio)}` : ""}
                     </option>

@@ -35,7 +35,9 @@ create table if not exists productos (
   nombre text not null,
   categoria text not null default 'General',
   descripcion text default '',
-  precio integer,
+  precio integer,                       -- precio de venta al público
+  costo integer default 0,              -- valor de compra
+  stock integer default 0,              -- existencias
   referencia text,
   disponible boolean not null default true,
   destacado boolean not null default false,
@@ -108,6 +110,8 @@ create table if not exists ventas (
   medio_pago text not null
     check (medio_pago in ('efectivo','transferencia','datafono')),
   cita_id uuid references citas(id) on delete set null,
+  producto_id uuid references productos(id) on delete set null,
+  costo_unitario integer default 0,
   notas text default ''
 );
 create index if not exists idx_ventas_fecha on ventas (fecha);
