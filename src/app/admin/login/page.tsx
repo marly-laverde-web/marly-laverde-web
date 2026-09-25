@@ -36,12 +36,12 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <Link href="/" className="inline-block">
-            <span className="mx-auto mb-3 block h-20 w-20 overflow-hidden rounded-full ring-1 ring-line">
+            <span className="mx-auto mb-3 block h-24 w-24 overflow-hidden rounded-full ring-1 ring-line">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo.png"
                 alt="Logo Marly Laverde Estudio de Belleza"
-                className="h-full w-full scale-[1.18] object-cover"
+                className="h-full w-full object-cover"
               />
             </span>
             <span className="block font-serif text-3xl text-ink">{site.nombre}</span>

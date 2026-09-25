@@ -19,12 +19,12 @@ export default function Footer() {
         {/* Marca */}
         <div>
           <div className="mb-3 flex items-center gap-3">
-            <span className="block h-14 w-14 shrink-0 overflow-hidden rounded-full ring-1 ring-line">
+            <span className="block h-16 w-16 shrink-0 overflow-hidden rounded-full ring-1 ring-line">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo.png"
                 alt="Logo Marly Laverde Estudio de Belleza"
-                className="h-full w-full scale-[1.18] object-cover"
+                className="h-full w-full object-cover"
               />
             </span>
             <span>

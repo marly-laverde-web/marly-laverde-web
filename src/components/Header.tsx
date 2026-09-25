@@ -21,12 +21,12 @@ export default function Header() {
       <div className="contenedor flex items-center justify-between py-4">
         {/* Logo */}
         <Link href="/" className="group flex items-center gap-3" onClick={() => setAbierto(false)}>
-          <span className="block h-12 w-12 shrink-0 overflow-hidden rounded-full ring-1 ring-line sm:h-14 sm:w-14">
+          <span className="block h-14 w-14 shrink-0 overflow-hidden rounded-full ring-1 ring-line sm:h-16 sm:w-16">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo.png"
               alt="Logo Marly Laverde Estudio de Belleza"
-              className="h-full w-full scale-[1.18] object-cover"
+              className="h-full w-full object-cover"
             />
           </span>
           <span className="leading-tight">
