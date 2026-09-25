@@ -75,6 +75,51 @@ export async function crearCitaAdmin(d: DatosCitaAdmin): Promise<Respuesta> {
   return { ok: true };
 }
 
+export interface DatosEditarCita {
+  citaId: string;
+  servicioId: string;
+  fecha: string;
+  hora: string;
+  nombre: string;
+  telefono: string;
+  notas: string;
+}
+
+/** Reprograma o edita una cita existente (fecha, hora, servicio, datos). */
+export async function actualizarCita(d: DatosEditarCita): Promise<Respuesta> {
+  const { supabase, user } = await clienteAutenticado();
+  if (!user) return { ok: false, error: "No autorizado" };
+  if (!d.nombre.trim() || !d.servicioId || !d.fecha || !d.hora) {
+    return { ok: false, error: "Completa nombre, servicio, fecha y hora." };
+  }
+
+  const { data: servicio } = await supabase
+    .from("servicios")
+    .select("nombre, duracion_min")
+    .eq("id", d.servicioId)
+    .single();
+  if (!servicio) return { ok: false, error: "Servicio no encontrado." };
+
+  const { error } = await supabase
+    .from("citas")
+    .update({
+      servicio_id: d.servicioId,
+      servicio_nombre: servicio.nombre,
+      duracion_min: servicio.duracion_min,
+      fecha: d.fecha,
+      hora_inicio: d.hora,
+      cliente_nombre: d.nombre.trim(),
+      cliente_telefono: d.telefono.trim(),
+      notas: d.notas.trim(),
+    })
+    .eq("id", d.citaId);
+
+  if (error) return { ok: false, error: "No se pudo actualizar la cita." };
+  revalidatePath("/admin/agenda");
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
 export async function actualizarEstadoCita(
   id: string,
   estado: EstadoCita

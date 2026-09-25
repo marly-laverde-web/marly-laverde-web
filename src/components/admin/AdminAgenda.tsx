@@ -14,6 +14,7 @@ import {
 } from "@/lib/tipos";
 import {
   crearCitaAdmin,
+  actualizarCita,
   actualizarEstadoCita,
   eliminarCita,
   finalizarCita,
@@ -79,6 +80,15 @@ export default function AdminAgenda({
   const [conRetoque, setConRetoque] = useState(true);
   const [notasRetoque, setNotasRetoque] = useState("");
 
+  // Edición / reprogramación de una cita existente
+  const [editando, setEditando] = useState<string | null>(null);
+  const [eServicio, setEServicio] = useState("");
+  const [eFecha, setEFecha] = useState("");
+  const [eHora, setEHora] = useState("");
+  const [eNombre, setENombre] = useState("");
+  const [eTelefono, setETelefono] = useState("");
+  const [eNotas, setENotas] = useState("");
+
   // Catálogo para agregar ítems al cobro (servicios + productos)
   const catalogoCobro = [
     ...servicios.map((s) => ({ nombre: s.nombre, precio: s.precio })),
@@ -130,6 +140,35 @@ export default function AdminAgenda({
     });
     if (res.ok) {
       setFinalizando(null);
+      router.refresh();
+    } else {
+      alert(res.error);
+    }
+  }
+
+  function abrirEditar(c: any) {
+    setFinalizando(null);
+    setEditando(c.id);
+    setEServicio(c.servicio_id ?? "");
+    setEFecha(c.fecha);
+    setEHora(hhmm(c.hora_inicio));
+    setENombre(c.cliente_nombre);
+    setETelefono(c.cliente_telefono ?? "");
+    setENotas(c.notas ?? "");
+  }
+
+  async function guardarEdicion(citaId: string) {
+    const res = await actualizarCita({
+      citaId,
+      servicioId: eServicio,
+      fecha: eFecha,
+      hora: eHora,
+      nombre: eNombre,
+      telefono: eTelefono,
+      notas: eNotas,
+    });
+    if (res.ok) {
+      setEditando(null);
       router.refresh();
     } else {
       alert(res.error);
@@ -371,6 +410,12 @@ export default function AdminAgenda({
                         Dar por terminado
                       </button>
                     )}
+                    <button
+                      onClick={() => abrirEditar(c)}
+                      className="font-medium text-ink hover:underline"
+                    >
+                      Editar
+                    </button>
                     <Link href={cobroUrl} className="font-medium text-rose hover:underline">
                       Registrar cobro
                     </Link>
@@ -383,6 +428,95 @@ export default function AdminAgenda({
                   </div>
                 </div>
                 </div>
+
+                {editando === c.id && (
+                  <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50/40 p-4">
+                    <p className="mb-3 font-medium text-ink">
+                      Reprogramar / editar cita
+                    </p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs text-muted">Servicio</label>
+                        <select
+                          value={eServicio}
+                          onChange={(e) => setEServicio(e.target.value)}
+                          className={input}
+                        >
+                          <option value="">Selecciona…</option>
+                          {categorias.map((cat) => (
+                            <optgroup key={cat} label={cat}>
+                              {servicios
+                                .filter((s) => s.categoria === cat)
+                                .map((s) => (
+                                  <option key={s.id} value={s.id}>
+                                    {s.nombre} ({formatDuracion(s.duracion_min)})
+                                  </option>
+                                ))}
+                            </optgroup>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-muted">Cliente</label>
+                        <input
+                          value={eNombre}
+                          onChange={(e) => setENombre(e.target.value)}
+                          className={input}
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-muted">Fecha</label>
+                        <input
+                          type="date"
+                          value={eFecha}
+                          onChange={(e) => setEFecha(e.target.value)}
+                          className={input}
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-muted">Hora</label>
+                        <input
+                          type="time"
+                          value={eHora}
+                          onChange={(e) => setEHora(e.target.value)}
+                          className={input}
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-muted">Teléfono</label>
+                        <input
+                          value={eTelefono}
+                          onChange={(e) => setETelefono(e.target.value)}
+                          className={input}
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-muted">Notas</label>
+                        <input
+                          value={eNotas}
+                          onChange={(e) => setENotas(e.target.value)}
+                          className={input}
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => guardarEdicion(c.id)}
+                        className="btn-primario !py-2 !text-xs"
+                      >
+                        Guardar cambios
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditando(null)}
+                        className="text-xs text-muted hover:underline"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {finalizando === c.id && (
                   <div className="mt-3 rounded-xl border border-green-200 bg-green-50/50 p-4">
