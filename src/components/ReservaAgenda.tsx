@@ -9,7 +9,7 @@ import { crearCitaPublica } from "@/app/(public)/agendar/acciones";
 import { IconWhatsApp, IconClock, IconSparkle } from "./Icons";
 
 export default function ReservaAgenda({ servicios }: { servicios: Servicio[] }) {
-  const [servicioId, setServicioId] = useState("");
+  const [serviciosSel, setServiciosSel] = useState<string[]>([]);
   const [fecha, setFecha] = useState("");
   const [hora, setHora] = useState("");
   const [nombre, setNombre] = useState("");
@@ -23,7 +23,16 @@ export default function ReservaAgenda({ servicios }: { servicios: Servicio[] }) 
   const [error, setError] = useState("");
   const [exito, setExito] = useState(false);
 
-  const servicio = servicios.find((s) => s.id === servicioId);
+  // Servicios seleccionados (en orden), duración y precio total
+  const seleccionados = serviciosSel
+    .map((id) => servicios.find((s) => s.id === id))
+    .filter(Boolean) as Servicio[];
+  const duracionTotal = seleccionados.reduce((a, s) => a + s.duracionMin, 0);
+  const precioTotal = seleccionados
+    .map((s) => s.precio)
+    .filter((p): p is number => p !== null)
+    .reduce((a, p) => a + p, 0);
+  const hayValoracion = seleccionados.some((s) => s.precio === null);
 
   // Fecha mínima: hoy
   const h = new Date();
@@ -31,10 +40,12 @@ export default function ReservaAgenda({ servicios }: { servicios: Servicio[] }) 
     h.getDate()
   ).padStart(2, "0")}`;
 
-  // Al cambiar servicio o fecha, consultar horas disponibles
+  const claveSel = serviciosSel.join(",");
+
+  // Al cambiar servicios o fecha, consultar horas disponibles
   useEffect(() => {
     setHora("");
-    if (!servicioId || !fecha) {
+    if (serviciosSel.length === 0 || !fecha) {
       setHoras([]);
       setMotivo("");
       return;
@@ -42,7 +53,7 @@ export default function ReservaAgenda({ servicios }: { servicios: Servicio[] }) 
     let cancelado = false;
     setCargandoHoras(true);
     setMotivo("");
-    fetch(`/api/disponibilidad?servicio=${servicioId}&fecha=${fecha}`)
+    fetch(`/api/disponibilidad?servicios=${claveSel}&fecha=${fecha}`)
       .then((r) => r.json())
       .then((d) => {
         if (cancelado) return;
@@ -58,11 +69,21 @@ export default function ReservaAgenda({ servicios }: { servicios: Servicio[] }) 
     return () => {
       cancelado = true;
     };
-  }, [servicioId, fecha]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [claveSel, fecha]);
+
+  function agregarServicio(id: string) {
+    if (!id || serviciosSel.includes(id)) return;
+    setServiciosSel((prev) => [...prev, id]);
+  }
+  function quitarServicio(id: string) {
+    setServiciosSel((prev) => prev.filter((x) => x !== id));
+  }
 
   async function confirmar(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (serviciosSel.length === 0) return setError("Elige al menos un servicio.");
     if (!nombre.trim()) return setError("Por favor escribe tu nombre.");
     if (!telefono.trim())
       return setError("El teléfono es obligatorio para agendar.");
@@ -70,7 +91,7 @@ export default function ReservaAgenda({ servicios }: { servicios: Servicio[] }) 
 
     setEnviando(true);
     const res = await crearCitaPublica({
-      servicioId,
+      servicioIds: serviciosSel,
       fecha,
       hora,
       nombre,
@@ -83,9 +104,8 @@ export default function ReservaAgenda({ servicios }: { servicios: Servicio[] }) 
       setExito(true);
     } else {
       setError(res.error ?? "Ocurrió un error. Intenta de nuevo.");
-      // Refrescar horas por si el horario se ocupó
-      if (servicioId && fecha) {
-        fetch(`/api/disponibilidad?servicio=${servicioId}&fecha=${fecha}`)
+      if (serviciosSel.length && fecha) {
+        fetch(`/api/disponibilidad?servicios=${claveSel}&fecha=${fecha}`)
           .then((r) => r.json())
           .then((d) => setHoras(d.horas ?? []));
       }
@@ -96,10 +116,11 @@ export default function ReservaAgenda({ servicios }: { servicios: Servicio[] }) 
     "w-full rounded-xl border border-line bg-white/80 px-4 py-3 text-ink outline-none transition-colors focus:border-rose focus:ring-2 focus:ring-rose/20";
 
   /* ---------- Pantalla de éxito ---------- */
-  if (exito && servicio) {
+  if (exito) {
+    const nombresSel = seleccionados.map((s) => s.nombre).join(" + ");
     const resumen = `¡Hola ${site.nombre}! 👋 Acabo de solicitar una cita:
 👤 ${nombre}
-💇 ${servicio.nombre}
+💇 ${nombresSel}
 📅 ${fecha} a las ${hora}
 Quedo atenta a la confirmación. ¡Gracias!`;
     return (
@@ -109,7 +130,7 @@ Quedo atenta a la confirmación. ¡Gracias!`;
         </div>
         <h3 className="mt-5 font-serif text-2xl text-ink">¡Solicitud enviada!</h3>
         <p className="mt-3 text-muted">
-          Tu cita de <strong className="text-ink">{servicio.nombre}</strong> quedó
+          Tu cita de <strong className="text-ink">{nombresSel}</strong> quedó
           registrada para el <strong className="text-ink">{fecha}</strong> a las{" "}
           <strong className="text-ink">{hora}</strong>.
         </p>
@@ -133,37 +154,78 @@ Quedo atenta a la confirmación. ¡Gracias!`;
   /* ---------- Formulario de reserva ---------- */
   return (
     <form onSubmit={confirmar} className="space-y-6">
-      {/* Paso 1: servicio */}
+      {/* Paso 1: servicios */}
       <div>
         <label className="mb-1.5 block text-sm font-medium text-ink">
-          1. Elige el servicio <span className="text-rose">*</span>
+          1. Elige tus servicios <span className="text-rose">*</span>
         </label>
+
+        {/* Servicios ya elegidos */}
+        {seleccionados.length > 0 && (
+          <ul className="mb-3 space-y-2">
+            {seleccionados.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center justify-between rounded-xl border border-line bg-white/80 px-3 py-2"
+              >
+                <span className="text-sm">
+                  <span className="font-medium text-ink">{s.nombre}</span>
+                  <span className="text-muted">
+                    {" "}
+                    · {formatDuracion(s.duracionMin)} ·{" "}
+                    {s.precio === null ? "según valoración" : formatCOP(s.precio)}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => quitarServicio(s.id)}
+                  className="ml-2 px-1 text-rose-dark hover:text-rose"
+                  aria-label={`Quitar ${s.nombre}`}
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
         <select
-          value={servicioId}
-          onChange={(e) => setServicioId(e.target.value)}
+          value=""
+          onChange={(e) => agregarServicio(e.target.value)}
           className={inputBase}
-          required
         >
-          <option value="">Selecciona un servicio…</option>
+          <option value="">
+            {seleccionados.length ? "+ Agregar otro servicio…" : "Selecciona un servicio…"}
+          </option>
           {categoriasServicios.map((cat) => {
-            const items = servicios.filter((s) => s.categoria === cat.nombre);
+            const items = servicios.filter(
+              (s) => s.categoria === cat.nombre && !serviciosSel.includes(s.id)
+            );
             if (items.length === 0) return null;
             return (
               <optgroup key={cat.nombre} label={cat.nombre}>
                 {items.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.nombre} — {formatCOP(s.precio)}
+                    {s.nombre} —{" "}
+                    {s.precio === null ? "Valoración" : formatCOP(s.precio)}
                   </option>
                 ))}
               </optgroup>
             );
           })}
         </select>
-        {servicio && (
-          <p className="mt-2 flex items-center gap-2 text-xs text-muted">
-            <IconClock className="h-3.5 w-3.5" />
-            Duración aproximada: {formatDuracion(servicio.duracionMin)}
-          </p>
+
+        {seleccionados.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+            <span className="flex items-center gap-1">
+              <IconClock className="h-3.5 w-3.5" />
+              Duración total: {formatDuracion(duracionTotal)}
+            </span>
+            <span>
+              Total: {formatCOP(precioTotal)}
+              {hayValoracion ? " + servicios a valorar" : ""}
+            </span>
+          </div>
         )}
       </div>
 
@@ -178,13 +240,13 @@ Quedo atenta a la confirmación. ¡Gracias!`;
           min={hoy}
           onChange={(e) => setFecha(e.target.value)}
           className={inputBase}
-          disabled={!servicioId}
+          disabled={serviciosSel.length === 0}
           required
         />
       </div>
 
       {/* Paso 3: hora */}
-      {servicioId && fecha && (
+      {serviciosSel.length > 0 && fecha && (
         <div>
           <label className="mb-2 block text-sm font-medium text-ink">
             3. Elige la hora <span className="text-rose">*</span>
@@ -212,7 +274,7 @@ Quedo atenta a la confirmación. ¡Gracias!`;
             <p className="rounded-lg bg-sand/70 px-4 py-3 text-sm text-muted">
               {motivo === "Cerrado ese día" || motivo === "Día no disponible"
                 ? "No atendemos ese día. Por favor elige otra fecha."
-                : "No hay horarios disponibles para esa fecha. Prueba con otro día."}
+                : "No hay horarios disponibles que alcancen para esos servicios en esa fecha. Prueba con otro día o menos servicios."}
             </p>
           )}
         </div>

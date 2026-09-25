@@ -104,25 +104,30 @@ export interface ResultadoDisponibilidad {
  * Se ejecuta en el servidor con la clave de servicio (omite RLS de forma segura).
  */
 export async function obtenerDisponibilidad(
-  servicioId: string,
+  servicioIds: string[],
   fecha: string
 ): Promise<ResultadoDisponibilidad> {
   if (!servicioConfigurado()) {
     return { disponible: false, horas: [], motivo: "Agenda no configurada" };
   }
+  if (!servicioIds || servicioIds.length === 0) {
+    return { disponible: false, horas: [], motivo: "Sin servicio" };
+  }
 
   const supabase = crearClienteServicio();
 
-  // 1. Servicio (para la duración)
-  const { data: servicio } = await supabase
+  // 1. Servicios seleccionados (la duración total es la suma)
+  const { data: servicios } = await supabase
     .from("servicios")
     .select("duracion_min")
-    .eq("id", servicioId)
-    .single();
-  if (!servicio) {
+    .in("id", servicioIds);
+  if (!servicios || servicios.length === 0) {
     return { disponible: false, horas: [], motivo: "Servicio no encontrado" };
   }
-  const duracionMin = servicio.duracion_min as number;
+  const duracionMin = servicios.reduce(
+    (a, s) => a + (s.duracion_min || 0),
+    0
+  ) as number;
 
   // 2. Horario del día
   const dia = diaSemanaDeFecha(fecha);
