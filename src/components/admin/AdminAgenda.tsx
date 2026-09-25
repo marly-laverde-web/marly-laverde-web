@@ -55,11 +55,13 @@ export default function AdminAgenda({
   citas,
   servicios,
   productos,
+  clientes,
 }: {
   fecha: string;
   citas: any[];
   servicios: any[];
   productos: any[];
+  clientes: any[];
 }) {
   const router = useRouter();
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -177,6 +179,21 @@ export default function AdminAgenda({
 
   function irAFecha(f: string) {
     router.push(`/admin/agenda?fecha=${f}`);
+  }
+
+  // Al escribir/elegir el nombre en "Nueva cita", autocompletar el teléfono
+  function onNombreCita(valor: string) {
+    setNombre(valor);
+    const cli = clientes.find(
+      (c) => c.nombre.trim().toLowerCase() === valor.trim().toLowerCase()
+    );
+    if (cli && cli.telefono) setTelefono(cli.telefono);
+  }
+  // Al escribir/elegir el teléfono, autocompletar el nombre
+  function onTelefonoCita(valor: string) {
+    setTelefono(valor);
+    const cli = clientes.find((c) => (c.telefono ?? "") === valor.trim());
+    if (cli) setNombre(cli.nombre);
   }
 
   async function crear(e: React.FormEvent) {
@@ -297,7 +314,10 @@ export default function AdminAgenda({
               <input
                 className={input}
                 value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                onChange={(e) => onNombreCita(e.target.value)}
+                list="clientes-sugeridos"
+                autoComplete="off"
+                placeholder="Escribe para buscar clientas…"
                 required
               />
             </div>
@@ -306,9 +326,27 @@ export default function AdminAgenda({
               <input
                 className={input}
                 value={telefono}
-                onChange={(e) => setTelefono(e.target.value)}
+                onChange={(e) => onTelefonoCita(e.target.value)}
+                list="telefonos-sugeridos"
+                autoComplete="off"
               />
             </div>
+            <datalist id="clientes-sugeridos">
+              {clientes.map((c, i) => (
+                <option key={i} value={c.nombre}>
+                  {c.telefono || ""}
+                </option>
+              ))}
+            </datalist>
+            <datalist id="telefonos-sugeridos">
+              {clientes
+                .filter((c) => c.telefono)
+                .map((c, i) => (
+                  <option key={i} value={c.telefono}>
+                    {c.nombre}
+                  </option>
+                ))}
+            </datalist>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Estado</label>
               <select

@@ -14,7 +14,7 @@ export default async function AdminAgendaPage({
 
   const supabase = await crearClienteServidor();
 
-  const [{ data: citas }, { data: servicios }, { data: productos }] =
+  const [{ data: citas }, { data: servicios }, { data: productos }, { data: clientes }] =
     await Promise.all([
       supabase
         .from("citas")
@@ -32,6 +32,10 @@ export default async function AdminAgendaPage({
         .select("nombre, precio")
         .eq("activo", true)
         .order("nombre", { ascending: true }),
+      supabase
+        .from("clientes")
+        .select("nombre, telefono")
+        .order("nombre", { ascending: true }),
     ]);
 
   return (
@@ -40,6 +44,7 @@ export default async function AdminAgendaPage({
       citas={citas ?? []}
       servicios={servicios ?? []}
       productos={productos ?? []}
+      clientes={clientes ?? []}
     />
   );
 }
