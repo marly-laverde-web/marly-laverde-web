@@ -3,6 +3,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { ahoraColombia } from "@/lib/disponibilidad";
 import { formatCOP } from "@/lib/format";
 import { ESTADOS_CITA, NOMBRES_DIAS } from "@/lib/tipos";
+import { site, waLinkTelefono } from "@/data/config";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,15 @@ function sumarDiasFecha(fecha: string, n: number) {
   return dt.toISOString().split("T")[0];
 }
 
+function diasHastaCumple(fechaNac: string, hoy: string) {
+  const [, m, d] = fechaNac.split("-").map(Number);
+  const [hy, hm, hd] = hoy.split("-").map(Number);
+  const today = Date.UTC(hy, hm - 1, hd);
+  let next = Date.UTC(hy, m - 1, d);
+  if (next < today) next = Date.UTC(hy + 1, m - 1, d);
+  return Math.round((next - today) / 86400000);
+}
+
 export default async function DashboardPage() {
   const supabase = await crearClienteServidor();
   const hoy = ahoraColombia().fecha;
@@ -38,6 +48,7 @@ export default async function DashboardPage() {
     { count: nServicios },
     { count: nProductos },
     { data: retoquesProx },
+    { data: clientesCumple },
   ] = await Promise.all([
     supabase.from("citas").select("*").eq("fecha", hoy).order("hora_inicio"),
     supabase
@@ -57,7 +68,17 @@ export default async function DashboardPage() {
       .in("estado", ["pendiente", "recordada"])
       .lte("fecha_retoque", limiteRetoque)
       .order("fecha_retoque", { ascending: true }),
+    supabase
+      .from("clientes")
+      .select("nombre, telefono, fecha_nacimiento")
+      .not("fecha_nacimiento", "is", null),
   ]);
+
+  // Cumpleaños en los próximos 7 días
+  const cumpleProximos = (clientesCumple ?? [])
+    .map((c: any) => ({ ...c, dias: diasHastaCumple(c.fecha_nacimiento, hoy) }))
+    .filter((c: any) => c.dias <= 7)
+    .sort((a: any, b: any) => a.dias - b.dias);
 
   const totalMes = (ventasMes ?? []).reduce((a, v) => a + (v.total ?? 0), 0);
   const totalHoy = (ventasMes ?? [])
@@ -116,6 +137,40 @@ export default async function DashboardPage() {
                 </span>
               </li>
             ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Cumpleaños próximos */}
+      {cumpleProximos.length > 0 && (
+        <div className="mb-8 rounded-2xl border border-gold/40 bg-gold/10 p-5">
+          <h2 className="mb-3 font-serif text-lg text-ink">🎂 Cumpleaños próximos</h2>
+          <ul className="space-y-2 text-sm">
+            {cumpleProximos.slice(0, 6).map((c: any) => {
+              const etiqueta =
+                c.dias === 0 ? "¡Hoy!" : c.dias === 1 ? "Mañana" : `En ${c.dias} días`;
+              return (
+                <li key={c.telefono || c.nombre} className="flex items-center gap-3">
+                  <span className="flex-1">
+                    <span className="font-medium text-ink">{c.nombre}</span>
+                    <span className="text-muted"> · {etiqueta}</span>
+                  </span>
+                  {c.telefono && (
+                    <a
+                      href={waLinkTelefono(
+                        c.telefono,
+                        `¡Feliz cumpleaños ${c.nombre}! 🎉 Te deseamos un día maravilloso de parte de ${site.nombre}. 💗`
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg bg-[#25d366] px-3 py-1 text-xs font-semibold text-white"
+                    >
+                      Felicitar
+                    </a>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

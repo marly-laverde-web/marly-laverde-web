@@ -70,5 +70,13 @@ export async function crearCitaPublica(datos: DatosCita): Promise<RespuestaCita>
     return { ok: false, error: "No se pudo registrar la cita. Intenta de nuevo." };
   }
 
+  // Registrar/actualizar la ficha de la clienta (sin sobrescribir si ya existe)
+  if (datos.telefono.trim()) {
+    await supabase.from("clientes").upsert(
+      { nombre: datos.nombre.trim(), telefono: datos.telefono.trim() },
+      { onConflict: "telefono", ignoreDuplicates: true }
+    );
+  }
+
   return { ok: true };
 }

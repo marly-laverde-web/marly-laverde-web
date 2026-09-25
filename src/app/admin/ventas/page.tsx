@@ -10,6 +10,7 @@ export default async function AdminVentasPage({
   searchParams: Promise<{
     cita?: string;
     cliente?: string;
+    tel?: string;
     desc?: string;
     total?: string;
   }>;
@@ -44,6 +45,7 @@ export default async function AdminVentasPage({
       prefill={{
         cita: params.cita ?? null,
         cliente: params.cliente ?? "",
+        tel: params.tel ?? "",
         desc: params.desc ?? "",
         total: params.total ?? "",
       }}

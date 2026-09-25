@@ -101,6 +101,7 @@ create table if not exists ventas (
   id uuid primary key default gen_random_uuid(),
   fecha timestamptz not null default now(),
   cliente_nombre text default '',
+  cliente_telefono text default '',
   descripcion text not null,
   cantidad integer not null default 1,
   total integer not null,
@@ -127,6 +128,16 @@ create table if not exists retoques (
 );
 create index if not exists idx_retoques_fecha on retoques (fecha_retoque);
 
+-- Fichas de clientas (CRM)
+create table if not exists clientes (
+  id uuid primary key default gen_random_uuid(),
+  nombre text not null,
+  telefono text unique,
+  fecha_nacimiento date,
+  notas text default '',
+  created_at timestamptz not null default now()
+);
+
 -- ---------------------------------------------------------------
 --  SEGURIDAD (Row Level Security)
 -- ---------------------------------------------------------------
@@ -139,6 +150,7 @@ alter table configuracion enable row level security;
 alter table citas         enable row level security;
 alter table ventas        enable row level security;
 alter table retoques      enable row level security;
+alter table clientes      enable row level security;
 
 -- Lectura pública (catálogos y horarios los ve todo el mundo)
 create policy "lectura publica servicios"     on servicios     for select using (true);
@@ -158,6 +170,7 @@ create policy "admin configuracion"  on configuracion for all using (auth.role()
 create policy "admin citas"          on citas         for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "admin ventas"         on ventas        for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "admin retoques"       on retoques      for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "admin clientes"       on clientes      for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 -- (Las citas creadas por clientas se insertan desde el servidor con la clave de
 --  servicio, que omite RLS de forma segura. Por eso no hay política anónima.)
 

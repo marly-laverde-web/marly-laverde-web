@@ -75,6 +75,15 @@ export interface Retoque {
   created_at: string;
 }
 
+export interface Cliente {
+  id: string;
+  nombre: string;
+  telefono: string | null;
+  fecha_nacimiento: string | null; // YYYY-MM-DD
+  notas: string;
+  created_at: string;
+}
+
 export interface Horario {
   dia_semana: number; // 0=Dom ... 6=Sab
   abierto: boolean;

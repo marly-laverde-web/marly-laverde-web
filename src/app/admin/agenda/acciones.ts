@@ -55,6 +55,15 @@ export async function crearCitaAdmin(d: DatosCitaAdmin): Promise<Respuesta> {
   });
 
   if (error) return { ok: false, error: "No se pudo crear la cita." };
+
+  // Registrar/actualizar la ficha de la clienta
+  if (d.telefono.trim()) {
+    await supabase.from("clientes").upsert(
+      { nombre: d.nombre.trim(), telefono: d.telefono.trim() },
+      { onConflict: "telefono", ignoreDuplicates: true }
+    );
+  }
+
   revalidatePath("/admin/agenda");
   revalidatePath("/admin");
   return { ok: true };

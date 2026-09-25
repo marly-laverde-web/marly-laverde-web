@@ -20,6 +20,7 @@ async function clienteAutenticado() {
 export interface DatosVenta {
   descripcion: string;
   cliente_nombre: string;
+  cliente_telefono: string;
   cantidad: number;
   total: number;
   medio_pago: MedioPago;
@@ -36,6 +37,7 @@ export async function registrarVenta(d: DatosVenta): Promise<Respuesta> {
   const { error } = await supabase.from("ventas").insert({
     descripcion: d.descripcion.trim(),
     cliente_nombre: d.cliente_nombre.trim(),
+    cliente_telefono: d.cliente_telefono.trim(),
     cantidad: d.cantidad || 1,
     total: d.total,
     medio_pago: d.medio_pago,

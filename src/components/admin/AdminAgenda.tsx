@@ -268,9 +268,9 @@ export default function AdminAgenda({
             const precio = servicio?.precio ?? "";
             const cobroUrl = `/admin/ventas?cita=${c.id}&cliente=${encodeURIComponent(
               c.cliente_nombre
-            )}&desc=${encodeURIComponent(c.servicio_nombre)}${
-              precio !== "" && precio !== null ? `&total=${precio}` : ""
-            }`;
+            )}&tel=${encodeURIComponent(c.cliente_telefono || "")}&desc=${encodeURIComponent(
+              c.servicio_nombre
+            )}${precio !== "" && precio !== null ? `&total=${precio}` : ""}`;
             return (
               <div
                 key={c.id}

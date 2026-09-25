@@ -12,6 +12,7 @@ import EncabezadoAdmin from "./EncabezadoAdmin";
 interface Prefill {
   cita: string | null;
   cliente: string;
+  tel: string;
   desc: string;
   total: string;
 }
@@ -51,6 +52,7 @@ export default function AdminVentas({
   const [abierto, setAbierto] = useState(Boolean(prefill.cita || prefill.desc));
   const [descripcion, setDescripcion] = useState(prefill.desc);
   const [cliente, setCliente] = useState(prefill.cliente);
+  const [telefono, setTelefono] = useState(prefill.tel);
   const [cantidad, setCantidad] = useState("1");
   const [total, setTotal] = useState(prefill.total);
   const [medio, setMedio] = useState<MedioPago>("efectivo");
@@ -82,6 +84,7 @@ export default function AdminVentas({
     const res = await registrarVenta({
       descripcion,
       cliente_nombre: cliente,
+      cliente_telefono: telefono,
       cantidad: Number(cantidad) || 1,
       total: Number(total) || 0,
       medio_pago: medio,
@@ -93,6 +96,7 @@ export default function AdminVentas({
       setExito("Venta registrada correctamente.");
       setDescripcion("");
       setCliente("");
+      setTelefono("");
       setCantidad("1");
       setTotal("");
       setNotas("");
@@ -195,6 +199,17 @@ export default function AdminVentas({
                 className={input}
                 value={cliente}
                 onChange={(e) => setCliente(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-ink">
+                Teléfono de la clienta
+              </label>
+              <input
+                className={input}
+                value={telefono}
+                onChange={(e) => setTelefono(e.target.value)}
+                placeholder="Para vincular a su ficha"
               />
             </div>
             <div>
