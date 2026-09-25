@@ -91,6 +91,9 @@ export default function AdminAgenda({
   const [eTelefono, setETelefono] = useState("");
   const [eNotas, setENotas] = useState("");
 
+  // Mostrar/ocultar las citas ya atendidas o finalizadas
+  const [mostrarFinalizadas, setMostrarFinalizadas] = useState(false);
+
   // Catálogo para agregar ítems al cobro (servicios + productos)
   const catalogoCobro = [
     ...servicios.map((s) => ({ nombre: s.nombre, precio: s.precio })),
@@ -239,6 +242,14 @@ export default function AdminAgenda({
 
   const categorias = Array.from(new Set(servicios.map((s) => s.categoria)));
 
+  // Citas activas (pendiente/confirmada) vs. finalizadas (atendida/cancelada/no asistió)
+  const activas = citas.filter(
+    (c) => c.estado === "pendiente" || c.estado === "confirmada"
+  );
+  const finalizadas = citas.filter(
+    (c) => c.estado !== "pendiente" && c.estado !== "confirmada"
+  );
+
   return (
     <div>
       <EncabezadoAdmin
@@ -377,14 +388,16 @@ export default function AdminAgenda({
         </form>
       )}
 
-      {/* Lista de citas */}
-      {citas.length === 0 ? (
+      {/* Lista de citas activas */}
+      {activas.length === 0 ? (
         <p className="rounded-2xl border border-line bg-white/60 px-4 py-10 text-center text-muted">
-          No hay citas para este día.
+          {finalizadas.length > 0
+            ? "No hay citas pendientes para este día."
+            : "No hay citas para este día."}
         </p>
       ) : (
         <div className="space-y-3">
-          {citas.map((c) => {
+          {activas.map((c) => {
             const infoEstado = ESTADOS_CITA.find((e) => e.valor === c.estado);
             const servicio = servicios.find((s) => s.id === c.servicio_id);
             const precio = servicio?.precio ?? "";
@@ -706,6 +719,62 @@ export default function AdminAgenda({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Citas atendidas / finalizadas (fuera de la agenda activa) */}
+      {finalizadas.length > 0 && (
+        <div className="mt-6">
+          <button
+            type="button"
+            onClick={() => setMostrarFinalizadas((v) => !v)}
+            className="text-sm font-medium text-muted hover:text-ink"
+          >
+            {mostrarFinalizadas ? "▾ Ocultar" : "▸ Ver"} atendidas / finalizadas de
+            hoy ({finalizadas.length})
+          </button>
+          {mostrarFinalizadas && (
+            <div className="mt-3 space-y-2">
+              {finalizadas.map((c) => {
+                const est = ESTADOS_CITA.find((e) => e.valor === c.estado);
+                return (
+                  <div
+                    key={c.id}
+                    className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-white/40 px-4 py-3"
+                  >
+                    <span className="w-14 text-sm font-medium text-ink">
+                      {hhmm(c.hora_inicio)}
+                    </span>
+                    <span className="flex-1 text-sm">
+                      <span className="font-medium text-ink">{c.cliente_nombre}</span>
+                      <span className="text-muted"> · {c.servicio_nombre}</span>
+                    </span>
+                    <select
+                      value={c.estado}
+                      onChange={(e) =>
+                        cambiarEstado(c.id, e.target.value as EstadoCita)
+                      }
+                      className="rounded-lg border border-line bg-white px-2 py-1 text-xs font-semibold"
+                      style={{ color: est?.color }}
+                      title="Cambiar estado (para reabrir la cita)"
+                    >
+                      {ESTADOS_CITA.map((es) => (
+                        <option key={es.valor} value={es.valor}>
+                          {es.etiqueta}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => borrar(c.id)}
+                      className="text-xs font-medium text-rose-dark hover:underline"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
