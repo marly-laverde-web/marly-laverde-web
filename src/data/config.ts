@@ -23,7 +23,7 @@ export const site = {
   telefonoVisible: "+57 316 766 4920",
 
   // Correo electrónico (opcional; deja "" para ocultarlo)
-  email: "",
+  email: "marlylaverdeestudiodebelleza@gmail.com",
 
   // Dirección física (opcional; deja "" para ocultarla hasta que la definas)
   direccion: "Calle 8 No. 12 C 58, Barrio Estero",
@@ -31,8 +31,8 @@ export const site = {
 
   // --- Horarios (edita a tu gusto; deja "" para ocultar una fila) ---
   horarios: [
-    { dia: "Lunes a Viernes", horas: "9:00 a. m. – 7:00 p. m." },
-    { dia: "Sábados", horas: "8:00 a. m. – 6:00 p. m." },
+    { dia: "Lunes a Viernes", horas: "9:00 a. m. – 6:00 p. m." },
+    { dia: "Sábados", horas: "8:00 a. m. – 4:00 p. m." },
     { dia: "Domingos y festivos", horas: "Con cita previa" },
   ],
 

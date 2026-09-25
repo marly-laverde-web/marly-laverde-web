@@ -19,13 +19,6 @@ export default function PrivacidadPage() {
       </p>
 
       <div className="prose-belleza mt-10 space-y-8 text-[0.95rem] leading-relaxed text-ink/90">
-        <div className="rounded-xl bg-sand/60 p-4 text-sm text-muted">
-          <strong className="text-ink">Nota:</strong> Este documento es una
-          plantilla base. Antes de publicarlo, complétalo con los datos legales
-          del establecimiento (razón social, NIT, dirección y correo) y, si es
-          posible, revísalo con un asesor jurídico.
-        </div>
-
         <section>
           <h2 className="font-serif text-xl text-ink">1. Responsable del tratamiento</h2>
           <p className="mt-2">
@@ -34,7 +27,7 @@ export default function PrivacidadPage() {
             sus clientas y usuarios.
           </p>
           <ul className="mt-2 list-disc space-y-1 pl-6 text-muted">
-            <li>Razón social / NIT: [completar]</li>
+            <li>Razón social: {site.nombre} {site.subtitulo}</li>
             <li>
               Dirección: {site.direccion || "[completar]"}
               {site.ciudad ? `, ${site.ciudad}` : ""}
