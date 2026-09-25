@@ -18,6 +18,7 @@ const enlaces = [
   { href: "/admin/galeria", texto: "Galería", icono: "M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6" },
   { href: "/admin/ventas", texto: "Ventas", icono: "M3 3v18h18M7 14l4-4 3 3 5-6" },
   { href: "/admin/compras", texto: "Compras", icono: "M6 2l1.5 3h9L18 2M3 6h18l-1.5 12a2 2 0 01-2 1.7H6.5a2 2 0 01-2-1.7z" },
+  { href: "/admin/cuentas-por-pagar", texto: "Cuentas por pagar", icono: "M7 3h10l2 3v15H5V6zM9 8h6M9 12h6M9 16h4" },
   { href: "/admin/reportes", texto: "Reportes", icono: "M4 4h16v16H4zM8 16v-4M12 16v-7M16 16v-3" },
   { href: "/admin/configuracion", texto: "Configuración", icono: "M12 8a4 4 0 100 8 4 4 0 000-8zM3 12h2M19 12h2M12 3v2M12 19v2" },
 ];

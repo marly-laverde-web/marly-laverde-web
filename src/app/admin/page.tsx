@@ -35,6 +35,14 @@ function diasHastaCumple(fechaNac: string, hoy: string) {
   return Math.round((next - today) / 86400000);
 }
 
+function diasEntre(fecha: string, hoy: string) {
+  const [ay, am, ad] = fecha.split("-").map(Number);
+  const [hy, hm, hd] = hoy.split("-").map(Number);
+  return Math.round(
+    (Date.UTC(ay, am - 1, ad) - Date.UTC(hy, hm - 1, hd)) / 86400000
+  );
+}
+
 export default async function DashboardPage() {
   const supabase = await crearClienteServidor();
   const hoy = ahoraColombia().fecha;
@@ -49,6 +57,8 @@ export default async function DashboardPage() {
     { count: nProductos },
     { data: retoquesProx },
     { data: clientesCumple },
+    { data: facturasPend },
+    { data: abonosAll },
   ] = await Promise.all([
     supabase.from("citas").select("*").eq("fecha", hoy).order("hora_inicio"),
     supabase
@@ -72,7 +82,26 @@ export default async function DashboardPage() {
       .from("clientes")
       .select("nombre, telefono, fecha_nacimiento")
       .not("fecha_nacimiento", "is", null),
+    supabase.from("facturas_pagar").select("*").eq("estado", "pendiente"),
+    supabase.from("abonos").select("factura_id, valor"),
   ]);
+
+  // Cuentas por pagar próximas a vencer (≤7 días) o vencidas, con saldo
+  const abonadoPorFactura = new Map<string, number>();
+  for (const a of abonosAll ?? [])
+    abonadoPorFactura.set(
+      a.factura_id,
+      (abonadoPorFactura.get(a.factura_id) ?? 0) + (a.valor ?? 0)
+    );
+  const cuentasProximas = (facturasPend ?? [])
+    .map((f: any) => ({
+      ...f,
+      saldo: Math.max(0, (f.valor_total ?? 0) - (abonadoPorFactura.get(f.id) ?? 0)),
+      dias: diasEntre(f.fecha_vencimiento, hoy),
+    }))
+    .filter((f: any) => f.saldo > 0 && f.dias <= 7)
+    .sort((a: any, b: any) => a.dias - b.dias);
+  const totalPorPagar = cuentasProximas.reduce((s: number, f: any) => s + f.saldo, 0);
 
   // Cumpleaños en los próximos 7 días
   const cumpleProximos = (clientesCumple ?? [])
@@ -168,6 +197,45 @@ export default async function DashboardPage() {
                       Felicitar
                     </a>
                   )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* Cuentas por pagar próximas */}
+      {cuentasProximas.length > 0 && (
+        <div className="mb-8 rounded-2xl border border-rose/40 bg-rose-soft/20 p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-serif text-lg text-ink">
+              💳 Cuentas por pagar próximas — {formatCOP(totalPorPagar)}
+            </h2>
+            <Link href="/admin/cuentas-por-pagar" className="text-sm font-medium text-rose hover:underline">
+              Gestionar →
+            </Link>
+          </div>
+          <ul className="space-y-2 text-sm">
+            {cuentasProximas.slice(0, 5).map((f: any) => {
+              const etiqueta =
+                f.dias < 0
+                  ? `Vencida hace ${Math.abs(f.dias)} día(s)`
+                  : f.dias === 0
+                    ? "¡Vence hoy!"
+                    : `En ${f.dias} día(s)`;
+              return (
+                <li key={f.id} className="flex items-center justify-between gap-3">
+                  <span>
+                    <span className="font-medium text-ink">{f.proveedor}</span>
+                    <span className="text-muted"> · saldo {formatCOP(f.saldo)}</span>
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      f.dias <= 2 ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {etiqueta}
+                  </span>
                 </li>
               );
             })}

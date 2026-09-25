@@ -75,6 +75,28 @@ export interface Retoque {
   created_at: string;
 }
 
+export interface FacturaPagar {
+  id: string;
+  proveedor: string;
+  numero: string;
+  descripcion: string;
+  fecha_compra: string | null;
+  fecha_vencimiento: string;
+  valor_total: number;
+  estado: "pendiente" | "pagada";
+  notas: string;
+  created_at: string;
+}
+
+export interface Abono {
+  id: string;
+  factura_id: string;
+  fecha: string;
+  valor: number;
+  notas: string;
+  created_at: string;
+}
+
 export interface Compra {
   id: string;
   fecha: string; // YYYY-MM-DD

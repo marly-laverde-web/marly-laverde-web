@@ -154,6 +154,33 @@ create table if not exists compras (
 );
 create index if not exists idx_compras_fecha on compras (fecha);
 
+-- Cuentas por pagar (facturas de proveedores)
+create table if not exists facturas_pagar (
+  id uuid primary key default gen_random_uuid(),
+  proveedor text not null,
+  numero text default '',
+  descripcion text default '',
+  fecha_compra date,
+  fecha_vencimiento date not null,
+  valor_total integer not null,
+  estado text not null default 'pendiente'
+    check (estado in ('pendiente','pagada')),
+  notas text default '',
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_facturas_venc on facturas_pagar (fecha_vencimiento);
+
+-- Abonos a las facturas por pagar
+create table if not exists abonos (
+  id uuid primary key default gen_random_uuid(),
+  factura_id uuid not null references facturas_pagar(id) on delete cascade,
+  fecha date not null,
+  valor integer not null,
+  notas text default '',
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_abonos_factura on abonos (factura_id);
+
 -- ---------------------------------------------------------------
 --  SEGURIDAD (Row Level Security)
 -- ---------------------------------------------------------------
@@ -167,7 +194,9 @@ alter table citas         enable row level security;
 alter table ventas        enable row level security;
 alter table retoques      enable row level security;
 alter table clientes      enable row level security;
-alter table compras       enable row level security;
+alter table compras         enable row level security;
+alter table facturas_pagar  enable row level security;
+alter table abonos          enable row level security;
 
 -- Lectura pública (catálogos y horarios los ve todo el mundo)
 create policy "lectura publica servicios"     on servicios     for select using (true);
@@ -189,6 +218,8 @@ create policy "admin ventas"         on ventas        for all using (auth.role()
 create policy "admin retoques"       on retoques      for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "admin clientes"       on clientes      for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "admin compras"        on compras       for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "admin facturas_pagar" on facturas_pagar for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "admin abonos"         on abonos        for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 -- (Las citas creadas por clientas se insertan desde el servidor con la clave de
 --  servicio, que omite RLS de forma segura. Por eso no hay política anónima.)
 
