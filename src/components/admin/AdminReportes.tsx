@@ -19,15 +19,33 @@ function fechaBogota(iso: string) {
 export default function AdminReportes({
   ventas,
   citas,
+  compras,
   desde,
   hasta,
 }: {
   ventas: any[];
   citas: any[];
+  compras: any[];
   desde: string;
   hasta: string;
 }) {
   const [descargando, setDescargando] = useState(false);
+
+  const totalIngresos = ventas.reduce((a, v) => a + (v.total ?? 0), 0);
+  const totalCompras = compras.reduce((a, c) => a + (c.valor ?? 0), 0);
+  const utilidad = totalIngresos - totalCompras;
+
+  // Compras agrupadas por categoría
+  const comprasPorCategoria = (() => {
+    const m = new Map<string, number>();
+    for (const c of compras) {
+      const k = c.categoria || "Sin categoría";
+      m.set(k, (m.get(k) ?? 0) + c.valor);
+    }
+    return Array.from(m.entries())
+      .map(([categoria, valor]) => ({ categoria, valor }))
+      .sort((a, b) => b.valor - a.valor);
+  })();
 
   const datos = useMemo(() => {
     const totalIngresos = ventas.reduce((a, v) => a + (v.total ?? 0), 0);
@@ -100,10 +118,13 @@ export default function AdminReportes({
       const wb = XLSX.utils.book_new();
 
       const resumen = [
-        ["Reporte de ventas"],
+        ["Reporte financiero"],
         ["Desde", desde, "Hasta", hasta],
         [],
-        ["Total ingresos", datos.totalIngresos],
+        ["Ventas totales", totalIngresos],
+        ["Costos y gastos (compras)", totalCompras],
+        ["Utilidad", utilidad],
+        [],
         ["Número de ventas", ventas.length],
         ["Citas atendidas", citas.length],
         [],
@@ -143,6 +164,16 @@ export default function AdminReportes({
         ...datos.clientasFrecuentes.map((x) => [x.cliente, x.count, x.total]),
       ];
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(clientas), "Clientas");
+
+      const comprasDetalle = [
+        ["Fecha", "Descripción", "Categoría", "Valor"],
+        ...compras.map((c) => [c.fecha, c.descripcion, c.categoria || "", c.valor]),
+      ];
+      XLSX.utils.book_append_sheet(
+        wb,
+        XLSX.utils.aoa_to_sheet(comprasDetalle),
+        "Compras"
+      );
 
       XLSX.writeFile(wb, `reporte_${desde}_a_${hasta}.xlsx`);
     } finally {
@@ -186,12 +217,46 @@ export default function AdminReportes({
         <button
           type="button"
           onClick={descargarExcel}
-          disabled={descargando || ventas.length === 0}
+          disabled={descargando || (ventas.length === 0 && compras.length === 0)}
           className="btn-primario !py-2 !text-sm"
         >
           {descargando ? "Generando…" : "⬇ Descargar Excel"}
         </button>
       </form>
+
+      {/* Resultado del período: Ventas − Compras = Utilidad */}
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <div className="rounded-2xl border border-line bg-white/70 p-5">
+          <p className="text-xs uppercase tracking-wider text-muted">Ventas totales</p>
+          <p className="mt-1 font-serif text-2xl text-green-700">
+            {formatCOP(totalIngresos)}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-line bg-white/70 p-5">
+          <p className="text-xs uppercase tracking-wider text-muted">
+            Costos y gastos (compras)
+          </p>
+          <p className="mt-1 font-serif text-2xl text-rose-dark">
+            {formatCOP(totalCompras)}
+          </p>
+        </div>
+        <div
+          className={`rounded-2xl border p-5 ${
+            utilidad >= 0
+              ? "border-green-300 bg-green-50/60"
+              : "border-rose/40 bg-rose-soft/30"
+          }`}
+        >
+          <p className="text-xs uppercase tracking-wider text-muted">Utilidad</p>
+          <p
+            className={`mt-1 font-serif text-2xl ${
+              utilidad >= 0 ? "text-green-700" : "text-rose-dark"
+            }`}
+          >
+            {formatCOP(utilidad)}
+          </p>
+        </div>
+      </div>
 
       {/* Resumen */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -254,6 +319,14 @@ export default function AdminReportes({
           columnas={["Fecha", "Ventas", "Total"]}
           filas={datos.porDia.map((x) => [x.fecha, String(x.count), formatCOP(x.total)])}
           vacio="Sin ventas en el período."
+        />
+
+        {/* Compras por categoría */}
+        <TablaReporte
+          titulo="Compras (costos y gastos) por categoría"
+          columnas={["Categoría", "Total"]}
+          filas={comprasPorCategoria.map((x) => [x.categoria, formatCOP(x.valor)])}
+          vacio="Sin compras en el período."
         />
       </div>
     </div>

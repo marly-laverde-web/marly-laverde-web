@@ -16,7 +16,7 @@ export default async function AdminReportesPage({
 
   const supabase = await crearClienteServidor();
 
-  const [{ data: ventas }, { data: citas }] = await Promise.all([
+  const [{ data: ventas }, { data: citas }, { data: compras }] = await Promise.all([
     supabase
       .from("ventas")
       .select("*")
@@ -29,12 +29,19 @@ export default async function AdminReportesPage({
       .gte("fecha", desde)
       .lte("fecha", hasta)
       .eq("estado", "atendida"),
+    supabase
+      .from("compras")
+      .select("*")
+      .gte("fecha", desde)
+      .lte("fecha", hasta)
+      .order("fecha", { ascending: false }),
   ]);
 
   return (
     <AdminReportes
       ventas={ventas ?? []}
       citas={citas ?? []}
+      compras={compras ?? []}
       desde={desde}
       hasta={hasta}
     />

@@ -138,6 +138,18 @@ create table if not exists clientes (
   created_at timestamptz not null default now()
 );
 
+-- Compras (costos y gastos)
+create table if not exists compras (
+  id uuid primary key default gen_random_uuid(),
+  fecha date not null,
+  descripcion text not null,
+  categoria text default '',
+  valor integer not null,
+  notas text default '',
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_compras_fecha on compras (fecha);
+
 -- ---------------------------------------------------------------
 --  SEGURIDAD (Row Level Security)
 -- ---------------------------------------------------------------
@@ -151,6 +163,7 @@ alter table citas         enable row level security;
 alter table ventas        enable row level security;
 alter table retoques      enable row level security;
 alter table clientes      enable row level security;
+alter table compras       enable row level security;
 
 -- Lectura pública (catálogos y horarios los ve todo el mundo)
 create policy "lectura publica servicios"     on servicios     for select using (true);
@@ -171,6 +184,7 @@ create policy "admin citas"          on citas         for all using (auth.role()
 create policy "admin ventas"         on ventas        for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "admin retoques"       on retoques      for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "admin clientes"       on clientes      for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "admin compras"        on compras       for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 -- (Las citas creadas por clientas se insertan desde el servidor con la clave de
 --  servicio, que omite RLS de forma segura. Por eso no hay política anónima.)
 

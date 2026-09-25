@@ -75,6 +75,16 @@ export interface Retoque {
   created_at: string;
 }
 
+export interface Compra {
+  id: string;
+  fecha: string; // YYYY-MM-DD
+  descripcion: string;
+  categoria: string;
+  valor: number;
+  notas: string;
+  created_at: string;
+}
+
 export interface Cliente {
   id: string;
   nombre: string;
