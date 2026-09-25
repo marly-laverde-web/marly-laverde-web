@@ -35,7 +35,11 @@ export default function ProductoCard({ producto }: { producto: Producto }) {
         </p>
 
         <div className="mt-4 flex items-center justify-between border-t border-line pt-4">
-          <span className="text-lg font-semibold text-rose-dark">
+          <span
+            className={`font-semibold text-rose-dark ${
+              producto.precio === null ? "text-sm" : "text-lg"
+            }`}
+          >
             {formatCOP(producto.precio)}
           </span>
           {!agotado && (

@@ -27,9 +27,15 @@ export default function ServicioCard({ servicio }: { servicio: Servicio }) {
 
         <div className="mt-4 flex items-center justify-between border-t border-line pt-4">
           <div>
-            <span className="block text-lg font-semibold text-rose-dark">
-              {formatCOP(servicio.precio)}
-            </span>
+            {servicio.precio === null ? (
+              <span className="block text-sm font-semibold text-rose-dark">
+                Precio según valoración
+              </span>
+            ) : (
+              <span className="block text-lg font-semibold text-rose-dark">
+                {formatCOP(servicio.precio)}
+              </span>
+            )}
             <span className="flex items-center gap-1 text-xs text-muted">
               <IconClock className="h-3.5 w-3.5" />
               {formatDuracion(servicio.duracionMin)}

@@ -1,6 +1,6 @@
-/** Formatea un precio en pesos colombianos. null => "Consultar". */
+/** Formatea un precio en pesos colombianos. null => "Precio según valoración". */
 export function formatCOP(valor: number | null): string {
-  if (valor === null || valor === undefined) return "Consultar";
+  if (valor === null || valor === undefined) return "Precio según valoración";
   return new Intl.NumberFormat("es-CO", {
     style: "currency",
     currency: "COP",
