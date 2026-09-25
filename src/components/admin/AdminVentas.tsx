@@ -4,7 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatCOP } from "@/lib/format";
 import { MEDIOS_PAGO, type MedioPago } from "@/lib/tipos";
-import { registrarVenta, eliminarVenta } from "@/app/admin/ventas/acciones";
+import {
+  registrarVenta,
+  eliminarVenta,
+  type ItemVenta,
+} from "@/app/admin/ventas/acciones";
 import EncabezadoAdmin from "./EncabezadoAdmin";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -50,11 +54,13 @@ export default function AdminVentas({
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(Boolean(prefill.cita || prefill.desc));
-  const [descripcion, setDescripcion] = useState(prefill.desc);
+  const [items, setItems] = useState<ItemVenta[]>(
+    prefill.desc
+      ? [{ descripcion: prefill.desc, cantidad: 1, precio: Number(prefill.total) || 0 }]
+      : []
+  );
   const [cliente, setCliente] = useState(prefill.cliente);
   const [telefono, setTelefono] = useState(prefill.tel);
-  const [cantidad, setCantidad] = useState("1");
-  const [total, setTotal] = useState(prefill.total);
   const [medio, setMedio] = useState<MedioPago>("efectivo");
   const [notas, setNotas] = useState("");
   const [guardando, setGuardando] = useState(false);
@@ -69,12 +75,27 @@ export default function AdminVentas({
   const porMedio: Record<string, number> = { efectivo: 0, transferencia: 0, datafono: 0 };
   for (const v of ventas) porMedio[v.medio_pago] = (porMedio[v.medio_pago] ?? 0) + v.total;
 
-  function cargarCatalogo(nombre: string) {
-    const item = catalogo.find((c) => c.nombre === nombre);
-    if (!item) return;
-    setDescripcion(item.nombre);
-    if (item.precio) setTotal(String(item.precio));
+  // Ítems del cobro
+  function agregarDelCatalogo(valor: string) {
+    if (!valor) return;
+    const sep = valor.lastIndexOf("||");
+    const nombre = valor.slice(0, sep);
+    const precio = Number(valor.slice(sep + 2)) || 0;
+    setItems((prev) => [...prev, { descripcion: nombre, cantidad: 1, precio }]);
   }
+  function agregarManual() {
+    setItems((prev) => [...prev, { descripcion: "", cantidad: 1, precio: 0 }]);
+  }
+  function actualizarItem(idx: number, campo: keyof ItemVenta, valor: any) {
+    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, [campo]: valor } : it)));
+  }
+  function quitarItem(idx: number) {
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+  }
+  const totalCobro = items.reduce(
+    (a, it) => a + (it.cantidad || 1) * (it.precio || 0),
+    0
+  );
 
   async function registrar(e: React.FormEvent) {
     e.preventDefault();
@@ -82,11 +103,9 @@ export default function AdminVentas({
     setExito("");
     setGuardando(true);
     const res = await registrarVenta({
-      descripcion,
+      items,
       cliente_nombre: cliente,
       cliente_telefono: telefono,
-      cantidad: Number(cantidad) || 1,
-      total: Number(total) || 0,
       medio_pago: medio,
       cita_id: prefill.cita,
       notas,
@@ -94,11 +113,9 @@ export default function AdminVentas({
     setGuardando(false);
     if (res.ok) {
       setExito("Venta registrada correctamente.");
-      setDescripcion("");
+      setItems([]);
       setCliente("");
       setTelefono("");
-      setCantidad("1");
-      setTotal("");
       setNotas("");
       // limpiar prefill de la URL
       router.replace("/admin/ventas");
@@ -164,35 +181,8 @@ export default function AdminVentas({
             </p>
           )}
 
-          {catalogo.length > 0 && (
-            <div>
-              <label className="mb-1 block text-sm font-medium text-ink">
-                Cargar del catálogo (opcional)
-              </label>
-              <select className={input} onChange={(e) => cargarCatalogo(e.target.value)} defaultValue="">
-                <option value="">Elegir servicio o producto…</option>
-                {catalogo.map((c, i) => (
-                  <option key={i} value={c.nombre}>
-                    {c.nombre} {c.precio ? `— ${formatCOP(c.precio)}` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
+          {/* Cliente */}
           <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-ink">
-                ¿Qué se vendió? *
-              </label>
-              <input
-                className={input}
-                value={descripcion}
-                onChange={(e) => setDescripcion(e.target.value)}
-                placeholder="Ej: Balayage, Shampoo matizador…"
-                required
-              />
-            </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Cliente</label>
               <input
@@ -212,28 +202,83 @@ export default function AdminVentas({
                 placeholder="Para vincular a su ficha"
               />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-ink">Cantidad</label>
-              <input
-                type="number"
-                min="1"
-                className={input}
-                value={cantidad}
-                onChange={(e) => setCantidad(e.target.value)}
-              />
+          </div>
+
+          {/* Ítems del cobro */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-ink">
+              Servicios / productos cobrados *
+            </label>
+            <div className="space-y-2">
+              {items.length === 0 && (
+                <p className="text-sm text-muted">
+                  Agrega uno o varios ítems con los botones de abajo.
+                </p>
+              )}
+              {items.map((it, idx) => (
+                <div key={idx} className="flex flex-wrap items-center gap-2">
+                  <input
+                    value={it.descripcion}
+                    onChange={(e) => actualizarItem(idx, "descripcion", e.target.value)}
+                    placeholder="Servicio / producto"
+                    className="min-w-[150px] flex-1 rounded-lg border border-line bg-white px-2 py-1.5 text-sm"
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    value={it.cantidad}
+                    onChange={(e) => actualizarItem(idx, "cantidad", Number(e.target.value))}
+                    title="Cantidad"
+                    className="w-16 rounded-lg border border-line bg-white px-2 py-1.5 text-sm"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    value={it.precio}
+                    onChange={(e) => actualizarItem(idx, "precio", Number(e.target.value))}
+                    placeholder="Precio"
+                    className="w-28 rounded-lg border border-line bg-white px-2 py-1.5 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => quitarItem(idx)}
+                    className="px-1 text-rose-dark hover:text-rose"
+                    title="Quitar"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-ink">
-                Valor total (pesos) *
-              </label>
-              <input
-                type="number"
-                min="0"
-                className={input}
-                value={total}
-                onChange={(e) => setTotal(e.target.value)}
-                required
-              />
+
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              {catalogo.length > 0 && (
+                <select
+                  value=""
+                  onChange={(e) => agregarDelCatalogo(e.target.value)}
+                  className="rounded-lg border border-line bg-white px-2 py-1.5 text-sm"
+                >
+                  <option value="">+ Agregar del catálogo…</option>
+                  {catalogo.map((c, i) => (
+                    <option key={i} value={`${c.nombre}||${c.precio ?? 0}`}>
+                      {c.nombre}
+                      {c.precio ? ` — ${formatCOP(c.precio)}` : ""}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <button
+                type="button"
+                onClick={agregarManual}
+                className="text-sm font-medium text-rose hover:underline"
+              >
+                + Ítem manual
+              </button>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between border-t border-line pt-2">
+              <span className="text-sm text-muted">Total</span>
+              <span className="font-serif text-xl text-ink">{formatCOP(totalCobro)}</span>
             </div>
           </div>
 

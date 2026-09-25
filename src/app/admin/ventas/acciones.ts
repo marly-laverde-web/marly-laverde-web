@@ -17,12 +17,16 @@ async function clienteAutenticado() {
   return { supabase, user };
 }
 
-export interface DatosVenta {
+export interface ItemVenta {
   descripcion: string;
+  cantidad: number;
+  precio: number;
+}
+
+export interface DatosVenta {
+  items: ItemVenta[];
   cliente_nombre: string;
   cliente_telefono: string;
-  cantidad: number;
-  total: number;
   medio_pago: MedioPago;
   cita_id: string | null;
   notas: string;
@@ -31,20 +35,25 @@ export interface DatosVenta {
 export async function registrarVenta(d: DatosVenta): Promise<Respuesta> {
   const { supabase, user } = await clienteAutenticado();
   if (!user) return { ok: false, error: "No autorizado" };
-  if (!d.descripcion.trim()) return { ok: false, error: "Escribe qué se vendió." };
-  if (!d.total || d.total <= 0) return { ok: false, error: "Escribe un valor válido." };
 
-  const { error } = await supabase.from("ventas").insert({
-    descripcion: d.descripcion.trim(),
-    cliente_nombre: d.cliente_nombre.trim(),
-    cliente_telefono: d.cliente_telefono.trim(),
-    cantidad: d.cantidad || 1,
-    total: d.total,
-    medio_pago: d.medio_pago,
-    cita_id: d.cita_id,
-    notas: d.notas.trim(),
-  });
+  const filas = d.items
+    .filter((it) => it.descripcion.trim() && it.precio > 0)
+    .map((it) => ({
+      descripcion: it.descripcion.trim(),
+      cliente_nombre: d.cliente_nombre.trim(),
+      cliente_telefono: d.cliente_telefono.trim(),
+      cantidad: it.cantidad || 1,
+      total: (it.cantidad || 1) * it.precio,
+      medio_pago: d.medio_pago,
+      cita_id: d.cita_id,
+      notas: d.notas.trim(),
+    }));
 
+  if (filas.length === 0) {
+    return { ok: false, error: "Agrega al menos un ítem con su valor." };
+  }
+
+  const { error } = await supabase.from("ventas").insert(filas);
   if (error) return { ok: false, error: "No se pudo registrar la venta." };
 
   // Si viene de una cita, marcarla como atendida
@@ -53,6 +62,9 @@ export async function registrarVenta(d: DatosVenta): Promise<Respuesta> {
   }
 
   revalidatePath("/admin/ventas");
+  revalidatePath("/admin/reportes");
+  revalidatePath("/admin/clientes");
+  revalidatePath("/admin/agenda");
   revalidatePath("/admin");
   return { ok: true };
 }
