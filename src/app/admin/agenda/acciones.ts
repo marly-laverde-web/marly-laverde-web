@@ -2,7 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { crearClienteServidor } from "@/lib/supabase/server";
-import type { EstadoCita } from "@/lib/tipos";
+import type { EstadoCita, MedioPago } from "@/lib/tipos";
+
+export interface ItemCobro {
+  descripcion: string;
+  cantidad: number;
+  precio: number;
+}
 
 export interface Respuesta {
   ok: boolean;
@@ -88,8 +94,12 @@ export async function actualizarEstadoCita(
  */
 export async function finalizarCita(
   citaId: string,
-  fechaRetoque: string | null,
-  notas: string
+  opciones: {
+    items: ItemCobro[];
+    medioPago: MedioPago;
+    fechaRetoque: string | null;
+    notasRetoque: string;
+  }
 ): Promise<Respuesta> {
   const { supabase, user } = await clienteAutenticado();
   if (!user) return { ok: false, error: "No autorizado" };
@@ -101,27 +111,54 @@ export async function finalizarCita(
     .single();
   if (!cita) return { ok: false, error: "Cita no encontrada." };
 
+  // 1. Marcar la cita como atendida
   const { error } = await supabase
     .from("citas")
     .update({ estado: "atendida" })
     .eq("id", citaId);
   if (error) return { ok: false, error: "No se pudo finalizar la cita." };
 
-  if (fechaRetoque) {
+  // 2. Registrar el cobro (una fila de venta por cada ítem con valor)
+  const filas = opciones.items
+    .filter((it) => it.descripcion.trim() && it.precio > 0)
+    .map((it) => ({
+      descripcion: it.descripcion.trim(),
+      cliente_nombre: cita.cliente_nombre,
+      cliente_telefono: cita.cliente_telefono,
+      cantidad: it.cantidad || 1,
+      total: (it.cantidad || 1) * it.precio,
+      medio_pago: opciones.medioPago,
+      cita_id: citaId,
+    }));
+  if (filas.length > 0) {
+    const { error: errVenta } = await supabase.from("ventas").insert(filas);
+    if (errVenta) {
+      return {
+        ok: false,
+        error: "La cita se finalizó, pero no se pudo registrar el cobro.",
+      };
+    }
+  }
+
+  // 3. Programar el próximo retoque (opcional)
+  if (opciones.fechaRetoque) {
     await supabase.from("retoques").insert({
       cliente_nombre: cita.cliente_nombre,
       cliente_telefono: cita.cliente_telefono,
       servicio_id: cita.servicio_id,
       servicio_nombre: cita.servicio_nombre,
-      fecha_retoque: fechaRetoque,
+      fecha_retoque: opciones.fechaRetoque,
       estado: "pendiente",
       cita_origen_id: citaId,
-      notas: notas.trim(),
+      notas: opciones.notasRetoque.trim(),
     });
   }
 
   revalidatePath("/admin/agenda");
   revalidatePath("/admin/retoques");
+  revalidatePath("/admin/ventas");
+  revalidatePath("/admin/reportes");
+  revalidatePath("/admin/clientes");
   revalidatePath("/admin");
   return { ok: true };
 }

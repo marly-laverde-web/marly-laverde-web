@@ -14,21 +14,32 @@ export default async function AdminAgendaPage({
 
   const supabase = await crearClienteServidor();
 
-  const [{ data: citas }, { data: servicios }] = await Promise.all([
-    supabase
-      .from("citas")
-      .select("*")
-      .eq("fecha", fecha)
-      .order("hora_inicio", { ascending: true }),
-    supabase
-      .from("servicios")
-      .select("id, nombre, categoria, duracion_min, precio, intervalo_retoque_dias")
-      .eq("activo", true)
-      .order("categoria", { ascending: true })
-      .order("nombre", { ascending: true }),
-  ]);
+  const [{ data: citas }, { data: servicios }, { data: productos }] =
+    await Promise.all([
+      supabase
+        .from("citas")
+        .select("*")
+        .eq("fecha", fecha)
+        .order("hora_inicio", { ascending: true }),
+      supabase
+        .from("servicios")
+        .select("id, nombre, categoria, duracion_min, precio, intervalo_retoque_dias")
+        .eq("activo", true)
+        .order("categoria", { ascending: true })
+        .order("nombre", { ascending: true }),
+      supabase
+        .from("productos")
+        .select("nombre, precio")
+        .eq("activo", true)
+        .order("nombre", { ascending: true }),
+    ]);
 
   return (
-    <AdminAgenda fecha={fecha} citas={citas ?? []} servicios={servicios ?? []} />
+    <AdminAgenda
+      fecha={fecha}
+      citas={citas ?? []}
+      servicios={servicios ?? []}
+      productos={productos ?? []}
+    />
   );
 }

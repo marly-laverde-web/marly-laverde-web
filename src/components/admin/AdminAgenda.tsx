@@ -4,13 +4,20 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { site, waLink } from "@/data/config";
-import { formatDuracion } from "@/lib/format";
-import { ESTADOS_CITA, NOMBRES_DIAS, type EstadoCita } from "@/lib/tipos";
+import { formatDuracion, formatCOP } from "@/lib/format";
+import {
+  ESTADOS_CITA,
+  MEDIOS_PAGO,
+  NOMBRES_DIAS,
+  type EstadoCita,
+  type MedioPago,
+} from "@/lib/tipos";
 import {
   crearCitaAdmin,
   actualizarEstadoCita,
   eliminarCita,
   finalizarCita,
+  type ItemCobro,
 } from "@/app/admin/agenda/acciones";
 import EncabezadoAdmin from "./EncabezadoAdmin";
 import { IconWhatsApp } from "@/components/Icons";
@@ -46,10 +53,12 @@ export default function AdminAgenda({
   fecha,
   citas,
   servicios,
+  productos,
 }: {
   fecha: string;
   citas: any[];
   servicios: any[];
+  productos: any[];
 }) {
   const router = useRouter();
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -62,27 +71,63 @@ export default function AdminAgenda({
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
-  // Finalización de cita + próximo retoque
+  // Finalización de cita + cobro con varios ítems + próximo retoque
   const [finalizando, setFinalizando] = useState<string | null>(null);
+  const [items, setItems] = useState<ItemCobro[]>([]);
+  const [medioPago, setMedioPago] = useState<MedioPago>("efectivo");
   const [fechaRetoque, setFechaRetoque] = useState("");
   const [conRetoque, setConRetoque] = useState(true);
   const [notasRetoque, setNotasRetoque] = useState("");
+
+  // Catálogo para agregar ítems al cobro (servicios + productos)
+  const catalogoCobro = [
+    ...servicios.map((s) => ({ nombre: s.nombre, precio: s.precio })),
+    ...productos.map((p) => ({ nombre: p.nombre, precio: p.precio })),
+  ];
 
   function abrirFinalizar(c: any) {
     const servicio = servicios.find((s) => s.id === c.servicio_id);
     const intervalo = servicio?.intervalo_retoque_dias;
     setFinalizando(c.id);
+    setItems([
+      { descripcion: c.servicio_nombre, cantidad: 1, precio: servicio?.precio ?? 0 },
+    ]);
+    setMedioPago("efectivo");
     setConRetoque(Boolean(intervalo));
     setFechaRetoque(intervalo ? sumarDias(c.fecha, intervalo) : "");
     setNotasRetoque("");
   }
 
-  async function confirmarFinalizar(c: any) {
-    const res = await finalizarCita(
-      c.id,
-      conRetoque && fechaRetoque ? fechaRetoque : null,
-      notasRetoque
+  function agregarDelCatalogo(valor: string) {
+    if (!valor) return;
+    const sep = valor.lastIndexOf("||");
+    const nombre = valor.slice(0, sep);
+    const precio = Number(valor.slice(sep + 2)) || 0;
+    setItems((prev) => [...prev, { descripcion: nombre, cantidad: 1, precio }]);
+  }
+  function agregarManual() {
+    setItems((prev) => [...prev, { descripcion: "", cantidad: 1, precio: 0 }]);
+  }
+  function actualizarItem(idx: number, campo: keyof ItemCobro, valor: any) {
+    setItems((prev) =>
+      prev.map((it, i) => (i === idx ? { ...it, [campo]: valor } : it))
     );
+  }
+  function quitarItem(idx: number) {
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+  }
+  const totalCobro = items.reduce(
+    (a, it) => a + (it.cantidad || 1) * (it.precio || 0),
+    0
+  );
+
+  async function confirmarFinalizar(c: any) {
+    const res = await finalizarCita(c.id, {
+      items,
+      medioPago,
+      fechaRetoque: conRetoque && fechaRetoque ? fechaRetoque : null,
+      notasRetoque,
+    });
     if (res.ok) {
       setFinalizando(null);
       router.refresh();
@@ -337,11 +382,106 @@ export default function AdminAgenda({
                 </div>
 
                 {finalizando === c.id && (
-                  <div className="mt-3 rounded-xl border border-green-200 bg-green-50/60 p-4">
-                    <p className="mb-2 font-medium text-ink">
-                      Finalizar servicio de {c.cliente_nombre}
+                  <div className="mt-3 rounded-xl border border-green-200 bg-green-50/50 p-4">
+                    <p className="mb-3 font-medium text-ink">
+                      Finalizar y cobrar — {c.cliente_nombre}
                     </p>
-                    <label className="flex items-center gap-2 text-sm text-ink">
+
+                    {/* Ítems a cobrar */}
+                    <div className="space-y-2">
+                      {items.map((it, idx) => (
+                        <div key={idx} className="flex flex-wrap items-center gap-2">
+                          <input
+                            value={it.descripcion}
+                            onChange={(e) => actualizarItem(idx, "descripcion", e.target.value)}
+                            placeholder="Servicio / producto"
+                            className="min-w-[140px] flex-1 rounded-lg border border-line bg-white px-2 py-1.5 text-sm"
+                          />
+                          <input
+                            type="number"
+                            min="1"
+                            value={it.cantidad}
+                            onChange={(e) => actualizarItem(idx, "cantidad", Number(e.target.value))}
+                            title="Cantidad"
+                            className="w-16 rounded-lg border border-line bg-white px-2 py-1.5 text-sm"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            value={it.precio}
+                            onChange={(e) => actualizarItem(idx, "precio", Number(e.target.value))}
+                            placeholder="Precio"
+                            className="w-28 rounded-lg border border-line bg-white px-2 py-1.5 text-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => quitarItem(idx)}
+                            className="px-1 text-rose-dark hover:text-rose"
+                            title="Quitar"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Agregar ítems */}
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      <select
+                        value=""
+                        onChange={(e) => agregarDelCatalogo(e.target.value)}
+                        className="rounded-lg border border-line bg-white px-2 py-1.5 text-sm"
+                      >
+                        <option value="">+ Agregar del catálogo…</option>
+                        {catalogoCobro.map((x, i) => (
+                          <option key={i} value={`${x.nombre}||${x.precio ?? 0}`}>
+                            {x.nombre}
+                            {x.precio ? ` — ${formatCOP(x.precio)}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={agregarManual}
+                        className="text-sm font-medium text-rose hover:underline"
+                      >
+                        + Ítem manual
+                      </button>
+                    </div>
+
+                    {/* Total */}
+                    <div className="mt-3 flex items-center justify-between border-t border-green-200 pt-2">
+                      <span className="text-sm text-muted">Total a cobrar</span>
+                      <span className="font-serif text-xl text-ink">
+                        {formatCOP(totalCobro)}
+                      </span>
+                    </div>
+
+                    {/* Medio de pago */}
+                    {totalCobro > 0 && (
+                      <div className="mt-3">
+                        <p className="mb-1 text-sm font-medium text-ink">Medio de pago</p>
+                        <div className="flex flex-wrap gap-2">
+                          {MEDIOS_PAGO.map((m) => (
+                            <button
+                              key={m.valor}
+                              type="button"
+                              onClick={() => setMedioPago(m.valor)}
+                              className={`rounded-lg border px-3 py-1.5 text-sm ${
+                                medioPago === m.valor
+                                  ? "border-rose bg-rose text-white"
+                                  : "border-line bg-white text-ink hover:border-rose"
+                              }`}
+                            >
+                              {m.etiqueta}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Próximo retoque */}
+                    <label className="mt-4 flex items-center gap-2 text-sm text-ink">
                       <input
                         type="checkbox"
                         checked={conRetoque}
@@ -350,40 +490,36 @@ export default function AdminAgenda({
                       Programar próximo retoque
                     </label>
                     {conRetoque && (
-                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                        <div>
-                          <label className="mb-1 block text-xs text-muted">
-                            Fecha del próximo retoque
-                          </label>
-                          <input
-                            type="date"
-                            value={fechaRetoque}
-                            min={fecha}
-                            onChange={(e) => setFechaRetoque(e.target.value)}
-                            className={input}
-                          />
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-xs text-muted">
-                            Nota (opcional)
-                          </label>
-                          <input
-                            value={notasRetoque}
-                            onChange={(e) => setNotasRetoque(e.target.value)}
-                            className={input}
-                            placeholder="Ej: retoque de raíz"
-                          />
-                        </div>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        <input
+                          type="date"
+                          value={fechaRetoque}
+                          min={fecha}
+                          onChange={(e) => setFechaRetoque(e.target.value)}
+                          className={input}
+                        />
+                        <input
+                          value={notasRetoque}
+                          onChange={(e) => setNotasRetoque(e.target.value)}
+                          className={input}
+                          placeholder="Nota del retoque (opcional)"
+                        />
                       </div>
                     )}
-                    <div className="mt-3 flex gap-2">
+
+                    {/* Botones */}
+                    <div className="mt-4 flex gap-2">
                       <button
+                        type="button"
                         onClick={() => confirmarFinalizar(c)}
                         className="btn-primario !py-2 !text-xs"
                       >
-                        Confirmar y finalizar
+                        {totalCobro > 0
+                          ? `Finalizar y cobrar ${formatCOP(totalCobro)}`
+                          : "Finalizar cita"}
                       </button>
                       <button
+                        type="button"
                         onClick={() => setFinalizando(null)}
                         className="text-xs text-muted hover:underline"
                       >
