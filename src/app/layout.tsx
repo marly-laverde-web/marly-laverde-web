@@ -15,8 +15,15 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
+// URL base del sitio (usa el dominio real de Vercel; localhost en desarrollo)
+const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://marlylaverde.com"),
+  metadataBase: new URL(baseUrl),
   title: {
     default: `${site.nombre} | ${site.subtitulo}`,
     template: `%s | ${site.nombre}`,
@@ -39,6 +46,11 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_CO",
     siteName: `${site.nombre} ${site.subtitulo}`,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${site.nombre} | ${site.subtitulo}`,
+    description: site.descripcion,
   },
   robots: { index: true, follow: true },
 };
