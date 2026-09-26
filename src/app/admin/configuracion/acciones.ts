@@ -75,6 +75,35 @@ export async function agregarBloqueo(d: {
   return { ok: true };
 }
 
+export async function guardarProfesional(d: {
+  id?: string;
+  nombre: string;
+  activo: boolean;
+}): Promise<Respuesta> {
+  const { supabase, user } = await clienteAutenticado();
+  if (!user) return { ok: false, error: "No autorizado" };
+  if (!d.nombre.trim()) return { ok: false, error: "Escribe el nombre." };
+
+  const payload = { nombre: d.nombre.trim(), activo: d.activo };
+  const { error } = d.id
+    ? await supabase.from("profesionales").update(payload).eq("id", d.id)
+    : await supabase.from("profesionales").insert(payload);
+  if (error) return { ok: false, error: "No se pudo guardar el profesional." };
+  revalidatePath("/admin/configuracion");
+  revalidatePath("/admin/ventas");
+  revalidatePath("/admin/agenda");
+  return { ok: true };
+}
+
+export async function eliminarProfesional(id: string): Promise<Respuesta> {
+  const { supabase, user } = await clienteAutenticado();
+  if (!user) return { ok: false, error: "No autorizado" };
+  const { error } = await supabase.from("profesionales").delete().eq("id", id);
+  if (error) return { ok: false, error: "No se pudo eliminar." };
+  revalidatePath("/admin/configuracion");
+  return { ok: true };
+}
+
 export async function eliminarBloqueo(id: string): Promise<Respuesta> {
   const { supabase, user } = await clienteAutenticado();
   if (!user) return { ok: false, error: "No autorizado" };

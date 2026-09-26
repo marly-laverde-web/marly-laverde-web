@@ -112,6 +112,7 @@ create table if not exists ventas (
   cita_id uuid references citas(id) on delete set null,
   producto_id uuid references productos(id) on delete set null,
   costo_unitario integer default 0,
+  profesional_nombre text default '',
   notas text default ''
 );
 create index if not exists idx_ventas_fecha on ventas (fecha);
@@ -170,6 +171,14 @@ create table if not exists facturas_pagar (
 );
 create index if not exists idx_facturas_venc on facturas_pagar (fecha_vencimiento);
 
+-- Profesionales (quién realiza el servicio)
+create table if not exists profesionales (
+  id uuid primary key default gen_random_uuid(),
+  nombre text not null,
+  activo boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
 -- Abonos a las facturas por pagar
 create table if not exists abonos (
   id uuid primary key default gen_random_uuid(),
@@ -197,6 +206,7 @@ alter table clientes      enable row level security;
 alter table compras         enable row level security;
 alter table facturas_pagar  enable row level security;
 alter table abonos          enable row level security;
+alter table profesionales   enable row level security;
 
 -- Lectura pública (catálogos y horarios los ve todo el mundo)
 create policy "lectura publica servicios"     on servicios     for select using (true);
@@ -220,6 +230,7 @@ create policy "admin clientes"       on clientes      for all using (auth.role()
 create policy "admin compras"        on compras       for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "admin facturas_pagar" on facturas_pagar for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "admin abonos"         on abonos        for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "admin profesionales"  on profesionales for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 -- (Las citas creadas por clientas se insertan desde el servidor con la clave de
 --  servicio, que omite RLS de forma segura. Por eso no hay política anónima.)
 

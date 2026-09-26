@@ -113,6 +113,18 @@ export default function AdminReportes({
       .map(([cliente, x]) => ({ cliente, ...x }))
       .sort((a, b) => b.total - a.total);
 
+    const profMap = new Map<string, { count: number; total: number }>();
+    for (const v of ventas) {
+      const k = (v.profesional_nombre || "Sin especificar").trim() || "Sin especificar";
+      const cur = profMap.get(k) ?? { count: 0, total: 0 };
+      cur.count += 1;
+      cur.total += v.total;
+      profMap.set(k, cur);
+    }
+    const porProfesional = Array.from(profMap.entries())
+      .map(([profesional, x]) => ({ profesional, ...x }))
+      .sort((a, b) => b.total - a.total);
+
     return {
       totalIngresos,
       porMedio,
@@ -120,6 +132,7 @@ export default function AdminReportes({
       masVendidos,
       serviciosRealizados,
       clientasFrecuentes,
+      porProfesional,
     };
   }, [ventas, citas]);
 
@@ -183,6 +196,12 @@ export default function AdminReportes({
         ...datos.clientasFrecuentes.map((x) => [x.cliente, x.count, x.total]),
       ];
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(clientas), "Clientas");
+
+      const porProf = [
+        ["Profesional", "N.º ventas", "Total"],
+        ...datos.porProfesional.map((x) => [x.profesional, x.count, x.total]),
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(porProf), "Profesionales");
 
       const comprasDetalle = [
         ["Fecha", "Descripción", "Categoría", "Valor"],
@@ -339,6 +358,18 @@ export default function AdminReportes({
             .slice(0, 10)
             .map((x) => [x.cliente, String(x.count), formatCOP(x.total)])}
           vacio="Sin datos de clientas."
+        />
+
+        {/* Acumulado por profesional */}
+        <TablaReporte
+          titulo="Acumulado por profesional"
+          columnas={["Profesional", "N.º", "Total"]}
+          filas={datos.porProfesional.map((x) => [
+            x.profesional,
+            String(x.count),
+            formatCOP(x.total),
+          ])}
+          vacio="Sin ventas en el período."
         />
 
         {/* Servicios realizados */}

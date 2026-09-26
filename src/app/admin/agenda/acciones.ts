@@ -145,6 +145,7 @@ export async function finalizarCita(
   opciones: {
     items: ItemCobro[];
     medioPago: MedioPago;
+    profesionalNombre: string;
     fechaRetoque: string | null;
     notasRetoque: string;
   }
@@ -180,6 +181,7 @@ export async function finalizarCita(
     cita_id: citaId,
     producto_id: it.producto_id ?? null,
     costo_unitario: it.costo ?? 0,
+    profesional_nombre: opciones.profesionalNombre.trim(),
   }));
   if (filas.length > 0) {
     const { error: errVenta } = await supabase.from("ventas").insert(filas);

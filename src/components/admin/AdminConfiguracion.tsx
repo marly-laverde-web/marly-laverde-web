@@ -8,6 +8,8 @@ import {
   guardarConfig,
   agregarBloqueo,
   eliminarBloqueo,
+  guardarProfesional,
+  eliminarProfesional,
 } from "@/app/admin/configuracion/acciones";
 import EncabezadoAdmin from "./EncabezadoAdmin";
 
@@ -18,17 +20,42 @@ export default function AdminConfiguracion({
   intervalo: intervaloInicial,
   anticipacion: anticipacionInicial,
   bloqueos,
+  profesionales,
 }: {
   horarios: Horario[];
   intervalo: number;
   anticipacion: number;
   bloqueos: any[];
+  profesionales: any[];
 }) {
   const router = useRouter();
   const [horarios, setHorarios] = useState<Horario[]>(horariosIniciales);
   const [intervalo, setIntervalo] = useState(String(intervaloInicial));
   const [anticipacion, setAnticipacion] = useState(String(anticipacionInicial));
   const [msg, setMsg] = useState("");
+
+  // Profesionales
+  const [nuevoProf, setNuevoProf] = useState("");
+
+  async function agregarProfesional(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nuevoProf.trim()) return;
+    const res = await guardarProfesional({ nombre: nuevoProf, activo: true });
+    if (res.ok) {
+      setNuevoProf("");
+      router.refresh();
+    } else alert(res.error);
+  }
+  async function alternarProfesional(p: any) {
+    await guardarProfesional({ id: p.id, nombre: p.nombre, activo: !p.activo });
+    router.refresh();
+  }
+  async function borrarProfesional(id: string, nombre: string) {
+    if (!confirm(`¿Eliminar al profesional "${nombre}"?`)) return;
+    const res = await eliminarProfesional(id);
+    if (res.ok) router.refresh();
+    else alert(res.error);
+  }
 
   // Bloqueos
   const [bFecha, setBFecha] = useState("");
@@ -86,8 +113,61 @@ export default function AdminConfiguracion({
     <div>
       <EncabezadoAdmin
         titulo="Configuración"
-        descripcion="Define el horario de atención y cómo se ofrecen las citas."
+        descripcion="Define el horario de atención, los profesionales y cómo se ofrecen las citas."
       />
+
+      {/* Profesionales */}
+      <div className="mb-8 rounded-2xl border border-line bg-white/70 p-6">
+        <h3 className="mb-1 font-serif text-xl text-ink">Profesionales</h3>
+        <p className="mb-4 text-sm text-muted">
+          Las personas que realizan los servicios. Al cobrar podrás elegir quién
+          lo hizo, y en Reportes verás el acumulado de cada una.
+        </p>
+
+        <form onSubmit={agregarProfesional} className="mb-4 flex flex-wrap gap-2">
+          <input
+            value={nuevoProf}
+            onChange={(e) => setNuevoProf(e.target.value)}
+            placeholder="Nombre del profesional"
+            className="flex-1 rounded-lg border border-line bg-white px-3 py-2 text-sm"
+          />
+          <button type="submit" className="btn-primario !py-2 !text-sm">
+            Agregar
+          </button>
+        </form>
+
+        {profesionales.length === 0 ? (
+          <p className="text-sm text-muted">Aún no hay profesionales.</p>
+        ) : (
+          <ul className="space-y-2">
+            {profesionales.map((p) => (
+              <li
+                key={p.id}
+                className="flex items-center justify-between rounded-lg bg-sand/40 px-4 py-2 text-sm"
+              >
+                <span className="font-medium text-ink">
+                  {p.nombre}
+                  {!p.activo && <span className="ml-2 text-xs text-muted">(inactivo)</span>}
+                </span>
+                <span className="flex items-center gap-3 text-xs">
+                  <button
+                    onClick={() => alternarProfesional(p)}
+                    className="font-medium text-rose hover:underline"
+                  >
+                    {p.activo ? "Desactivar" : "Activar"}
+                  </button>
+                  <button
+                    onClick={() => borrarProfesional(p.id, p.nombre)}
+                    className="font-medium text-rose-dark hover:underline"
+                  >
+                    Eliminar
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {/* Horario semanal */}
       <div className="mb-8 rounded-2xl border border-line bg-white/70 p-6">

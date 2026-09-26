@@ -16,7 +16,7 @@ export default async function AdminConfiguracionPage() {
   const supabase = await crearClienteServidor();
   const hoy = ahoraColombia().fecha;
 
-  const [{ data: horariosDB }, { data: config }, { data: bloqueos }] =
+  const [{ data: horariosDB }, { data: config }, { data: bloqueos }, { data: profesionales }] =
     await Promise.all([
       supabase.from("horarios").select("*").order("dia_semana", { ascending: true }),
       supabase.from("configuracion").select("*").eq("id", 1).single(),
@@ -25,6 +25,7 @@ export default async function AdminConfiguracionPage() {
         .select("*")
         .gte("fecha", hoy)
         .order("fecha", { ascending: true }),
+      supabase.from("profesionales").select("*").order("nombre", { ascending: true }),
     ]);
 
   // Asegurar que existan los 7 días
@@ -49,6 +50,7 @@ export default async function AdminConfiguracionPage() {
       intervalo={config?.intervalo_slots ?? 30}
       anticipacion={config?.anticipacion_horas ?? 2}
       bloqueos={bloqueos ?? []}
+      profesionales={profesionales ?? []}
     />
   );
 }

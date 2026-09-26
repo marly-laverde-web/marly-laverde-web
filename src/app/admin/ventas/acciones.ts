@@ -31,6 +31,7 @@ export interface DatosVenta {
   cliente_nombre: string;
   cliente_telefono: string;
   medio_pago: MedioPago;
+  profesional_nombre: string;
   cita_id: string | null;
   notas: string;
 }
@@ -52,6 +53,7 @@ export async function registrarVenta(d: DatosVenta): Promise<Respuesta> {
     cita_id: d.cita_id,
     producto_id: it.producto_id ?? null,
     costo_unitario: it.costo ?? 0,
+    profesional_nombre: d.profesional_nombre.trim(),
     notas: d.notas.trim(),
   }));
 

@@ -56,12 +56,14 @@ export default function AdminAgenda({
   servicios,
   productos,
   clientes,
+  profesionales,
 }: {
   fecha: string;
   citas: any[];
   servicios: any[];
   productos: any[];
   clientes: any[];
+  profesionales: string[];
 }) {
   const router = useRouter();
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -78,6 +80,7 @@ export default function AdminAgenda({
   const [finalizando, setFinalizando] = useState<string | null>(null);
   const [items, setItems] = useState<ItemCobro[]>([]);
   const [medioPago, setMedioPago] = useState<MedioPago>("efectivo");
+  const [profesionalCobro, setProfesionalCobro] = useState("");
   const [fechaRetoque, setFechaRetoque] = useState("");
   const [conRetoque, setConRetoque] = useState(true);
   const [notasRetoque, setNotasRetoque] = useState("");
@@ -118,6 +121,7 @@ export default function AdminAgenda({
       { descripcion: c.servicio_nombre, cantidad: 1, precio: servicio?.precio ?? 0 },
     ]);
     setMedioPago("efectivo");
+    setProfesionalCobro(profesionales.length === 1 ? profesionales[0] : "");
     setConRetoque(Boolean(intervalo));
     setFechaRetoque(intervalo ? sumarDias(c.fecha, intervalo) : "");
     setNotasRetoque("");
@@ -158,6 +162,7 @@ export default function AdminAgenda({
     const res = await finalizarCita(c.id, {
       items,
       medioPago,
+      profesionalNombre: profesionalCobro,
       fechaRetoque: conRetoque && fechaRetoque ? fechaRetoque : null,
       notasRetoque,
     });
@@ -683,6 +688,27 @@ export default function AdminAgenda({
                             </button>
                           ))}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Profesional */}
+                    {profesionales.length > 0 && (
+                      <div className="mt-3">
+                        <p className="mb-1 text-sm font-medium text-ink">
+                          Profesional que atendió
+                        </p>
+                        <select
+                          value={profesionalCobro}
+                          onChange={(e) => setProfesionalCobro(e.target.value)}
+                          className={input}
+                        >
+                          <option value="">Sin especificar</option>
+                          {profesionales.map((p) => (
+                            <option key={p} value={p}>
+                              {p}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     )}
 

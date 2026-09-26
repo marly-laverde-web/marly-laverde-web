@@ -35,13 +35,17 @@ export default function AdminShell({
 
   const NavContenido = () => (
     <>
-      <div className="px-5 py-6">
-        <Link href="/admin" className="font-serif text-xl text-cream">
-          {site.nombre}
+      <div className="flex items-center gap-3 px-5 py-6">
+        <span className="block h-11 w-11 shrink-0 overflow-hidden rounded-full ring-1 ring-white/20">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Logo" className="h-full w-full object-cover" />
+        </span>
+        <Link href="/admin" className="leading-tight">
+          <span className="block font-serif text-lg text-cream">{site.nombre}</span>
+          <span className="block text-[0.55rem] font-semibold uppercase tracking-[0.25em] text-rose-soft">
+            Administración
+          </span>
         </Link>
-        <p className="text-[0.6rem] font-semibold uppercase tracking-[0.25em] text-rose-soft">
-          Administración
-        </p>
       </div>
       <nav className="flex-1 space-y-1 px-3">
         {enlaces.map((e) => {
@@ -92,7 +96,13 @@ export default function AdminShell({
     <div className="min-h-screen bg-cream lg:flex">
       {/* Barra superior móvil */}
       <div className="flex items-center justify-between border-b border-line bg-ink px-4 py-3 lg:hidden">
-        <span className="font-serif text-lg text-cream">{site.nombre}</span>
+        <span className="flex items-center gap-2">
+          <span className="block h-9 w-9 overflow-hidden rounded-full ring-1 ring-white/20">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Logo" className="h-full w-full object-cover" />
+          </span>
+          <span className="font-serif text-lg text-cream">{site.nombre}</span>
+        </span>
         <button onClick={() => setAbierto(true)} aria-label="Abrir menú">
           <IconMenu className="h-6 w-6 text-cream" />
         </button>

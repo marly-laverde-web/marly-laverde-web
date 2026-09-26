@@ -44,6 +44,7 @@ const etiquetaMedio: Record<string, string> = {
 export default function AdminVentas({
   ventas,
   catalogo,
+  profesionales,
   hoy,
   prefill,
 }: {
@@ -54,6 +55,7 @@ export default function AdminVentas({
     productoId: string | null;
     costo: number;
   }[];
+  profesionales: string[];
   hoy: string;
   prefill: Prefill;
 }) {
@@ -66,6 +68,9 @@ export default function AdminVentas({
   );
   const [cliente, setCliente] = useState(prefill.cliente);
   const [telefono, setTelefono] = useState(prefill.tel);
+  const [profesional, setProfesional] = useState(
+    profesionales.length === 1 ? profesionales[0] : ""
+  );
   const [medio, setMedio] = useState<MedioPago>("efectivo");
   const [notas, setNotas] = useState("");
   const [guardando, setGuardando] = useState(false);
@@ -120,6 +125,7 @@ export default function AdminVentas({
       cliente_nombre: cliente,
       cliente_telefono: telefono,
       medio_pago: medio,
+      profesional_nombre: profesional,
       cita_id: prefill.cita,
       notas,
     });
@@ -294,6 +300,27 @@ export default function AdminVentas({
               <span className="font-serif text-xl text-ink">{formatCOP(totalCobro)}</span>
             </div>
           </div>
+
+          {/* Profesional */}
+          {profesionales.length > 0 && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-ink">
+                Profesional que atendió
+              </label>
+              <select
+                className={input}
+                value={profesional}
+                onChange={(e) => setProfesional(e.target.value)}
+              >
+                <option value="">Sin especificar</option>
+                {profesionales.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Medio de pago */}
           <div>

@@ -21,7 +21,7 @@ export default async function AdminVentasPage({
 
   const supabase = await crearClienteServidor();
 
-  const [{ data: ventas }, { data: servicios }, { data: productos }] =
+  const [{ data: ventas }, { data: servicios }, { data: productos }, { data: profesionales }] =
     await Promise.all([
       supabase
         .from("ventas")
@@ -30,6 +30,7 @@ export default async function AdminVentasPage({
         .order("fecha", { ascending: false }),
       supabase.from("servicios").select("nombre, precio").eq("activo", true),
       supabase.from("productos").select("id, nombre, precio, costo").eq("activo", true),
+      supabase.from("profesionales").select("nombre").eq("activo", true).order("nombre"),
     ]);
 
   const catalogo = [
@@ -51,6 +52,7 @@ export default async function AdminVentasPage({
     <AdminVentas
       ventas={ventas ?? []}
       catalogo={catalogo}
+      profesionales={(profesionales ?? []).map((p) => p.nombre)}
       hoy={hoy}
       prefill={{
         cita: params.cita ?? null,
