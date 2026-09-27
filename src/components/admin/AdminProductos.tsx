@@ -43,6 +43,16 @@ export default function AdminProductos({ inicial }: { inicial: any[] }) {
   const [form, setForm] = useState<FormState | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
+  const [busqueda, setBusqueda] = useState("");
+
+  const filtrados = inicial.filter((p) => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      p.nombre.toLowerCase().includes(q) ||
+      (p.categoria ?? "").toLowerCase().includes(q)
+    );
+  });
 
   function abrirEditar(p: any) {
     setError("");
@@ -257,6 +267,14 @@ export default function AdminProductos({ inicial }: { inicial: any[] }) {
         </form>
       )}
 
+      <input
+        type="text"
+        value={busqueda}
+        onChange={(e) => setBusqueda(e.target.value)}
+        placeholder="Buscar producto por nombre o categoría…"
+        className="mb-4 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-rose focus:ring-2 focus:ring-rose/20"
+      />
+
       <div className="overflow-x-auto rounded-2xl border border-line bg-white/60">
         <table className="w-full min-w-[560px] text-left text-sm">
           <thead className="border-b border-line bg-sand/50 text-xs uppercase tracking-wider text-muted">
@@ -270,14 +288,14 @@ export default function AdminProductos({ inicial }: { inicial: any[] }) {
             </tr>
           </thead>
           <tbody>
-            {inicial.length === 0 && (
+            {filtrados.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-muted">
-                  Aún no hay productos.
+                  {busqueda ? "No se encontraron productos." : "Aún no hay productos."}
                 </td>
               </tr>
             )}
-            {inicial.map((p) => (
+            {filtrados.map((p) => (
               <tr key={p.id} className="border-b border-line/60 last:border-0">
                 <td className="px-4 py-3 font-medium text-ink">{p.nombre}</td>
                 <td className="px-4 py-3 text-muted">{p.categoria}</td>
