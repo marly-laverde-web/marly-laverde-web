@@ -81,6 +81,7 @@ export default function AdminAgenda({
   const [items, setItems] = useState<ItemCobro[]>([]);
   const [medioPago, setMedioPago] = useState<MedioPago>("efectivo");
   const [profesionalCobro, setProfesionalCobro] = useState("");
+  const [resumenTrabajo, setResumenTrabajo] = useState("");
   const [fechaRetoque, setFechaRetoque] = useState("");
   const [conRetoque, setConRetoque] = useState(true);
   const [notasRetoque, setNotasRetoque] = useState("");
@@ -93,6 +94,7 @@ export default function AdminAgenda({
   const [eNombre, setENombre] = useState("");
   const [eTelefono, setETelefono] = useState("");
   const [eNotas, setENotas] = useState("");
+  const [eResumen, setEResumen] = useState("");
 
   // Mostrar/ocultar las citas ya atendidas o finalizadas
   const [mostrarFinalizadas, setMostrarFinalizadas] = useState(false);
@@ -122,6 +124,7 @@ export default function AdminAgenda({
     ]);
     setMedioPago("efectivo");
     setProfesionalCobro(profesionales.length === 1 ? profesionales[0] : "");
+    setResumenTrabajo(c.resumen_trabajo ?? "");
     setConRetoque(Boolean(intervalo));
     setFechaRetoque(intervalo ? sumarDias(c.fecha, intervalo) : "");
     setNotasRetoque("");
@@ -163,6 +166,7 @@ export default function AdminAgenda({
       items,
       medioPago,
       profesionalNombre: profesionalCobro,
+      resumenTrabajo,
       fechaRetoque: conRetoque && fechaRetoque ? fechaRetoque : null,
       notasRetoque,
     });
@@ -183,6 +187,7 @@ export default function AdminAgenda({
     setENombre(c.cliente_nombre);
     setETelefono(c.cliente_telefono ?? "");
     setENotas(c.notas ?? "");
+    setEResumen(c.resumen_trabajo ?? "");
   }
 
   async function guardarEdicion(citaId: string) {
@@ -194,6 +199,7 @@ export default function AdminAgenda({
       nombre: eNombre,
       telefono: eTelefono,
       notas: eNotas,
+      resumenTrabajo: eResumen,
     });
     if (res.ok) {
       setEditando(null);
@@ -573,6 +579,18 @@ export default function AdminAgenda({
                         />
                       </div>
                     </div>
+                    <div className="mt-3">
+                      <label className="mb-1 block text-xs text-muted">
+                        Resumen del trabajo (historial)
+                      </label>
+                      <textarea
+                        value={eResumen}
+                        onChange={(e) => setEResumen(e.target.value)}
+                        rows={2}
+                        placeholder="Mezclas de color, esmaltes, productos aplicados…"
+                        className={input}
+                      />
+                    </div>
                     <div className="mt-3 flex gap-2">
                       <button
                         type="button"
@@ -711,6 +729,23 @@ export default function AdminAgenda({
                         </select>
                       </div>
                     )}
+
+                    {/* Resumen del trabajo (historial técnico) */}
+                    <div className="mt-3">
+                      <label className="mb-1 block text-sm font-medium text-ink">
+                        Resumen del trabajo (historial)
+                      </label>
+                      <textarea
+                        value={resumenTrabajo}
+                        onChange={(e) => setResumenTrabajo(e.target.value)}
+                        rows={2}
+                        placeholder="Ej: color 7.1 + oxigenta 20 vol, matiz perla; esmalte tono nude…"
+                        className={input}
+                      />
+                      <p className="mt-1 text-xs text-muted">
+                        Queda guardado en el historial de la clienta.
+                      </p>
+                    </div>
 
                     {/* Próximo retoque */}
                     <label className="mt-4 flex items-center gap-2 text-sm text-ink">

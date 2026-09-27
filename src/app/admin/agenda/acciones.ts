@@ -86,6 +86,7 @@ export interface DatosEditarCita {
   nombre: string;
   telefono: string;
   notas: string;
+  resumenTrabajo: string;
 }
 
 /** Reprograma o edita una cita existente (fecha, hora, servicio, datos). */
@@ -114,11 +115,13 @@ export async function actualizarCita(d: DatosEditarCita): Promise<Respuesta> {
       cliente_nombre: d.nombre.trim(),
       cliente_telefono: d.telefono.trim(),
       notas: d.notas.trim(),
+      resumen_trabajo: d.resumenTrabajo.trim(),
     })
     .eq("id", d.citaId);
 
   if (error) return { ok: false, error: "No se pudo actualizar la cita." };
   revalidatePath("/admin/agenda");
+  revalidatePath("/admin/clientes");
   revalidatePath("/admin");
   return { ok: true };
 }
@@ -146,6 +149,7 @@ export async function finalizarCita(
     items: ItemCobro[];
     medioPago: MedioPago;
     profesionalNombre: string;
+    resumenTrabajo: string;
     fechaRetoque: string | null;
     notasRetoque: string;
   }
@@ -160,10 +164,13 @@ export async function finalizarCita(
     .single();
   if (!cita) return { ok: false, error: "Cita no encontrada." };
 
-  // 1. Marcar la cita como atendida
+  // 1. Marcar la cita como atendida y guardar el resumen del trabajo
   const { error } = await supabase
     .from("citas")
-    .update({ estado: "atendida" })
+    .update({
+      estado: "atendida",
+      resumen_trabajo: opciones.resumenTrabajo.trim(),
+    })
     .eq("id", citaId);
   if (error) return { ok: false, error: "No se pudo finalizar la cita." };
 

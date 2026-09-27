@@ -94,6 +94,7 @@ create table if not exists citas (
   estado text not null default 'pendiente'
     check (estado in ('pendiente','confirmada','atendida','cancelada','no_asistio')),
   notas text default '',
+  resumen_trabajo text default '',
   created_at timestamptz not null default now()
 );
 create index if not exists idx_citas_fecha on citas (fecha);

@@ -262,11 +262,23 @@ export default function AdminClientes({
                 {citasDe(seleccionado).length === 0 ? (
                   <p className="text-sm text-muted">Sin citas registradas.</p>
                 ) : (
-                  <ul className="space-y-1 text-sm">
-                    {citasDe(seleccionado).slice(0, 12).map((c: any, i: number) => (
-                      <li key={i} className="flex justify-between border-b border-line/40 py-1">
-                        <span className="text-ink">{c.servicio_nombre}</span>
-                        <span className="text-muted">{c.fecha} · {c.hora_inicio?.slice(0, 5)} · {c.estado}</span>
+                  <ul className="space-y-2 text-sm">
+                    {citasDe(seleccionado).slice(0, 20).map((c: any, i: number) => (
+                      <li key={i} className="border-b border-line/40 pb-2">
+                        <div className="flex justify-between gap-2">
+                          <span className="font-medium text-ink">{c.servicio_nombre}</span>
+                          <span className="whitespace-nowrap text-muted">
+                            {c.fecha} · {c.estado}
+                          </span>
+                        </div>
+                        {c.notas && (
+                          <p className="mt-0.5 text-xs text-muted">📝 {c.notas}</p>
+                        )}
+                        {c.resumen_trabajo && (
+                          <p className="mt-0.5 rounded bg-sand/50 px-2 py-1 text-xs text-ink">
+                            🎨 {c.resumen_trabajo}
+                          </p>
+                        )}
                       </li>
                     ))}
                   </ul>

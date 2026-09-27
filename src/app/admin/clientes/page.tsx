@@ -11,7 +11,9 @@ export default async function AdminClientesPage() {
       supabase.from("clientes").select("*").order("nombre", { ascending: true }),
       supabase
         .from("citas")
-        .select("cliente_nombre, cliente_telefono, servicio_nombre, fecha, hora_inicio, estado")
+        .select(
+          "cliente_nombre, cliente_telefono, servicio_nombre, fecha, hora_inicio, estado, resumen_trabajo, notas"
+        )
         .order("fecha", { ascending: false }),
       supabase
         .from("ventas")
