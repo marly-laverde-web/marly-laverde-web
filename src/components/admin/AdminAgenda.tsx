@@ -82,6 +82,7 @@ export default function AdminAgenda({
   const [medioPago, setMedioPago] = useState<MedioPago>("efectivo");
   const [profesionalCobro, setProfesionalCobro] = useState("");
   const [resumenTrabajo, setResumenTrabajo] = useState("");
+  const [fechaPagoCredito, setFechaPagoCredito] = useState("");
   const [fechaRetoque, setFechaRetoque] = useState("");
   const [conRetoque, setConRetoque] = useState(true);
   const [notasRetoque, setNotasRetoque] = useState("");
@@ -125,6 +126,7 @@ export default function AdminAgenda({
     setMedioPago("efectivo");
     setProfesionalCobro(profesionales.length === 1 ? profesionales[0] : "");
     setResumenTrabajo(c.resumen_trabajo ?? "");
+    setFechaPagoCredito(fecha);
     setConRetoque(Boolean(intervalo));
     setFechaRetoque(intervalo ? sumarDias(c.fecha, intervalo) : "");
     setNotasRetoque("");
@@ -167,6 +169,7 @@ export default function AdminAgenda({
       medioPago,
       profesionalNombre: profesionalCobro,
       resumenTrabajo,
+      fechaPagoCredito: medioPago === "credito" ? fechaPagoCredito : null,
       fechaRetoque: conRetoque && fechaRetoque ? fechaRetoque : null,
       notasRetoque,
     });
@@ -691,7 +694,10 @@ export default function AdminAgenda({
                       <div className="mt-3">
                         <p className="mb-1 text-sm font-medium text-ink">Medio de pago</p>
                         <div className="flex flex-wrap gap-2">
-                          {MEDIOS_PAGO.map((m) => (
+                          {[
+                            ...MEDIOS_PAGO,
+                            { valor: "credito" as MedioPago, etiqueta: "Crédito (por cobrar)" },
+                          ].map((m) => (
                             <button
                               key={m.valor}
                               type="button"
@@ -706,6 +712,19 @@ export default function AdminAgenda({
                             </button>
                           ))}
                         </div>
+                        {medioPago === "credito" && (
+                          <div className="mt-2">
+                            <label className="mb-1 block text-xs text-muted">
+                              Fecha de pago del crédito
+                            </label>
+                            <input
+                              type="date"
+                              value={fechaPagoCredito}
+                              onChange={(e) => setFechaPagoCredito(e.target.value)}
+                              className={input}
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
 

@@ -150,12 +150,20 @@ export async function finalizarCita(
     medioPago: MedioPago;
     profesionalNombre: string;
     resumenTrabajo: string;
+    fechaPagoCredito: string | null;
     fechaRetoque: string | null;
     notasRetoque: string;
   }
 ): Promise<Respuesta> {
   const { supabase, user } = await clienteAutenticado();
   if (!user) return { ok: false, error: "No autorizado" };
+
+  const hayCobro = opciones.items.some(
+    (it) => it.descripcion.trim() && it.precio > 0
+  );
+  if (hayCobro && opciones.medioPago === "credito" && !opciones.fechaPagoCredito) {
+    return { ok: false, error: "Indica la fecha de pago del crédito." };
+  }
 
   const { data: cita } = await supabase
     .from("citas")
@@ -178,6 +186,7 @@ export async function finalizarCita(
   const itemsValidos = opciones.items.filter(
     (it) => it.descripcion.trim() && it.precio > 0
   );
+  const esCredito = opciones.medioPago === "credito";
   const filas = itemsValidos.map((it) => ({
     descripcion: it.descripcion.trim(),
     cliente_nombre: cita.cliente_nombre,
@@ -189,6 +198,8 @@ export async function finalizarCita(
     producto_id: it.producto_id ?? null,
     costo_unitario: it.costo ?? 0,
     profesional_nombre: opciones.profesionalNombre.trim(),
+    fecha_pago_credito: esCredito ? opciones.fechaPagoCredito : null,
+    credito_pagado: false,
   }));
   if (filas.length > 0) {
     const { error: errVenta } = await supabase.from("ventas").insert(filas);
@@ -223,6 +234,7 @@ export async function finalizarCita(
   revalidatePath("/admin/clientes");
   revalidatePath("/admin/inventario");
   revalidatePath("/admin/productos");
+  revalidatePath("/admin/cuentas-por-cobrar");
   revalidatePath("/admin");
   return { ok: true };
 }

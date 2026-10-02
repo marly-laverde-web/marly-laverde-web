@@ -10,7 +10,18 @@ const etiquetaMedio: Record<string, string> = {
   efectivo: "Efectivo",
   transferencia: "Transferencia",
   datafono: "Datáfono",
+  credito: "Crédito",
 };
+
+/** Medio con el que realmente entró (o entrará) el dinero de una venta. */
+function medioEfectivo(v: any): string {
+  if (v.medio_pago === "credito") {
+    return v.credito_pagado && v.credito_medio_pago
+      ? v.credito_medio_pago
+      : "credito";
+  }
+  return v.medio_pago;
+}
 
 function fechaBogota(iso: string) {
   return new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
@@ -66,8 +77,12 @@ export default function AdminReportes({
       efectivo: 0,
       transferencia: 0,
       datafono: 0,
+      credito: 0,
     };
-    for (const v of ventas) porMedio[v.medio_pago] = (porMedio[v.medio_pago] ?? 0) + v.total;
+    for (const v of ventas) {
+      const m = medioEfectivo(v);
+      porMedio[m] = (porMedio[m] ?? 0) + v.total;
+    }
 
     const porDiaMap = new Map<string, { total: number; count: number }>();
     for (const v of ventas) {
@@ -164,6 +179,7 @@ export default function AdminReportes({
         ["Efectivo", datos.porMedio.efectivo],
         ["Transferencia", datos.porMedio.transferencia],
         ["Datáfono", datos.porMedio.datafono],
+        ["Crédito (por cobrar)", datos.porMedio.credito],
       ];
       XLSX.utils.book_append_sheet(
         wb,
@@ -335,6 +351,12 @@ export default function AdminReportes({
             <li className="flex justify-between"><span>Efectivo</span><span>{formatCOP(datos.porMedio.efectivo)}</span></li>
             <li className="flex justify-between"><span>Transferencia</span><span>{formatCOP(datos.porMedio.transferencia)}</span></li>
             <li className="flex justify-between"><span>Datáfono</span><span>{formatCOP(datos.porMedio.datafono)}</span></li>
+            {datos.porMedio.credito > 0 && (
+              <li className="flex justify-between text-rose-dark">
+                <span>Crédito (por cobrar)</span>
+                <span>{formatCOP(datos.porMedio.credito)}</span>
+              </li>
+            )}
           </ul>
         </div>
       </div>

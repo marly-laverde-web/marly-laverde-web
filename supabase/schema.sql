@@ -109,11 +109,15 @@ create table if not exists ventas (
   cantidad integer not null default 1,
   total integer not null,
   medio_pago text not null
-    check (medio_pago in ('efectivo','transferencia','datafono')),
+    check (medio_pago in ('efectivo','transferencia','datafono','credito')),
   cita_id uuid references citas(id) on delete set null,
   producto_id uuid references productos(id) on delete set null,
   costo_unitario integer default 0,
   profesional_nombre text default '',
+  fecha_pago_credito date,
+  credito_pagado boolean not null default false,
+  credito_pago_fecha date,
+  credito_medio_pago text,
   notas text default ''
 );
 create index if not exists idx_ventas_fecha on ventas (fecha);

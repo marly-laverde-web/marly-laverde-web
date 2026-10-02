@@ -15,13 +15,21 @@ export const ESTADOS_CITA: { valor: EstadoCita; etiqueta: string; color: string 
   { valor: "no_asistio", etiqueta: "No asistió", color: "#dc2626" },
 ];
 
-export type MedioPago = "efectivo" | "transferencia" | "datafono";
+export type MedioPago = "efectivo" | "transferencia" | "datafono" | "credito";
 
+// Medios de pago en efectivo/real (NO incluye crédito)
 export const MEDIOS_PAGO: { valor: MedioPago; etiqueta: string }[] = [
   { valor: "efectivo", etiqueta: "Efectivo" },
   { valor: "transferencia", etiqueta: "Transferencia" },
   { valor: "datafono", etiqueta: "Datáfono" },
 ];
+
+export const ETIQUETA_MEDIO: Record<string, string> = {
+  efectivo: "Efectivo",
+  transferencia: "Transferencia",
+  datafono: "Datáfono",
+  credito: "Crédito",
+};
 
 export interface Cita {
   id: string;

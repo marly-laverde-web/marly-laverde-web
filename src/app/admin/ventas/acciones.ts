@@ -32,6 +32,7 @@ export interface DatosVenta {
   cliente_telefono: string;
   medio_pago: MedioPago;
   profesional_nombre: string;
+  fecha_pago_credito: string | null;
   cita_id: string | null;
   notas: string;
 }
@@ -39,7 +40,11 @@ export interface DatosVenta {
 export async function registrarVenta(d: DatosVenta): Promise<Respuesta> {
   const { supabase, user } = await clienteAutenticado();
   if (!user) return { ok: false, error: "No autorizado" };
+  if (d.medio_pago === "credito" && !d.fecha_pago_credito) {
+    return { ok: false, error: "Indica la fecha de pago del crédito." };
+  }
 
+  const esCredito = d.medio_pago === "credito";
   const itemsValidos = d.items.filter(
     (it) => it.descripcion.trim() && it.precio > 0
   );
@@ -54,6 +59,8 @@ export async function registrarVenta(d: DatosVenta): Promise<Respuesta> {
     producto_id: it.producto_id ?? null,
     costo_unitario: it.costo ?? 0,
     profesional_nombre: d.profesional_nombre.trim(),
+    fecha_pago_credito: esCredito ? d.fecha_pago_credito : null,
+    credito_pagado: false,
     notas: d.notas.trim(),
   }));
 
@@ -78,6 +85,33 @@ export async function registrarVenta(d: DatosVenta): Promise<Respuesta> {
   revalidatePath("/admin/agenda");
   revalidatePath("/admin/inventario");
   revalidatePath("/admin/productos");
+  revalidatePath("/admin/cuentas-por-cobrar");
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+/** Marca un crédito como pagado (indica con qué medio y cuándo). */
+export async function marcarCreditoPagado(
+  ventaId: string,
+  medio: MedioPago,
+  fecha: string
+): Promise<Respuesta> {
+  const { supabase, user } = await clienteAutenticado();
+  if (!user) return { ok: false, error: "No autorizado" };
+
+  const { error } = await supabase
+    .from("ventas")
+    .update({
+      credito_pagado: true,
+      credito_medio_pago: medio,
+      credito_pago_fecha: fecha,
+    })
+    .eq("id", ventaId);
+  if (error) return { ok: false, error: "No se pudo registrar el pago." };
+
+  revalidatePath("/admin/cuentas-por-cobrar");
+  revalidatePath("/admin/ventas");
+  revalidatePath("/admin/reportes");
   revalidatePath("/admin");
   return { ok: true };
 }

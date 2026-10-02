@@ -39,6 +39,7 @@ const etiquetaMedio: Record<string, string> = {
   efectivo: "Efectivo",
   transferencia: "Transferencia",
   datafono: "Datáfono",
+  credito: "Crédito",
 };
 
 export default function AdminVentas({
@@ -72,6 +73,7 @@ export default function AdminVentas({
     profesionales.length === 1 ? profesionales[0] : ""
   );
   const [medio, setMedio] = useState<MedioPago>("efectivo");
+  const [fechaPagoCredito, setFechaPagoCredito] = useState(hoy);
   const [notas, setNotas] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
@@ -126,6 +128,7 @@ export default function AdminVentas({
       cliente_telefono: telefono,
       medio_pago: medio,
       profesional_nombre: profesional,
+      fecha_pago_credito: medio === "credito" ? fechaPagoCredito : null,
       cita_id: prefill.cita,
       notas,
     });
@@ -328,7 +331,10 @@ export default function AdminVentas({
               Medio de pago *
             </label>
             <div className="flex flex-wrap gap-2">
-              {MEDIOS_PAGO.map((m) => (
+              {[
+                ...MEDIOS_PAGO,
+                { valor: "credito" as MedioPago, etiqueta: "Crédito (por cobrar)" },
+              ].map((m) => (
                 <button
                   key={m.valor}
                   type="button"
@@ -343,6 +349,22 @@ export default function AdminVentas({
                 </button>
               ))}
             </div>
+            {medio === "credito" && (
+              <div className="mt-3">
+                <label className="mb-1 block text-sm font-medium text-ink">
+                  Fecha de pago del crédito *
+                </label>
+                <input
+                  type="date"
+                  value={fechaPagoCredito}
+                  onChange={(e) => setFechaPagoCredito(e.target.value)}
+                  className={input}
+                />
+                <p className="mt-1 text-xs text-muted">
+                  Quedará en “Cuentas por cobrar” hasta que la clienta pague.
+                </p>
+              </div>
+            )}
           </div>
 
           <div>

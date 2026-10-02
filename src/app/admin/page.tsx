@@ -59,6 +59,7 @@ export default async function DashboardPage() {
     { data: clientesCumple },
     { data: facturasPend },
     { data: abonosAll },
+    { data: creditosPend },
   ] = await Promise.all([
     supabase.from("citas").select("*").eq("fecha", hoy).order("hora_inicio"),
     supabase
@@ -84,6 +85,11 @@ export default async function DashboardPage() {
       .not("fecha_nacimiento", "is", null),
     supabase.from("facturas_pagar").select("*").eq("estado", "pendiente"),
     supabase.from("abonos").select("factura_id, valor"),
+    supabase
+      .from("ventas")
+      .select("cliente_nombre, total, fecha_pago_credito, cita_id")
+      .eq("medio_pago", "credito")
+      .eq("credito_pagado", false),
   ]);
 
   // Cuentas por pagar próximas a vencer (≤7 días) o vencidas, con saldo
@@ -102,6 +108,24 @@ export default async function DashboardPage() {
     .filter((f: any) => f.saldo > 0 && f.dias <= 7)
     .sort((a: any, b: any) => a.dias - b.dias);
   const totalPorPagar = cuentasProximas.reduce((s: number, f: any) => s + f.saldo, 0);
+
+  // Cuentas por cobrar (ventas a crédito) próximas a vencer (≤7 días) o vencidas
+  const cobrarPorGrupo = new Map<string, any>();
+  for (const v of creditosPend ?? []) {
+    const clave = v.cita_id ?? `${v.cliente_nombre}__${v.fecha_pago_credito ?? "s/f"}`;
+    const g = cobrarPorGrupo.get(clave) ?? {
+      cliente_nombre: v.cliente_nombre ?? "Clienta",
+      fecha_pago_credito: v.fecha_pago_credito ?? null,
+      total: 0,
+      dias: v.fecha_pago_credito ? diasEntre(v.fecha_pago_credito, hoy) : 9999,
+    };
+    g.total += v.total ?? 0;
+    cobrarPorGrupo.set(clave, g);
+  }
+  const cobrarProximos = [...cobrarPorGrupo.values()]
+    .filter((g: any) => g.dias <= 7)
+    .sort((a: any, b: any) => a.dias - b.dias);
+  const totalPorCobrar = cobrarProximos.reduce((s: number, g: any) => s + g.total, 0);
 
   // Cumpleaños en los próximos 7 días
   const cumpleProximos = (clientesCumple ?? [])
@@ -232,6 +256,47 @@ export default async function DashboardPage() {
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                       f.dias <= 2 ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {etiqueta}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* Cuentas por cobrar próximas */}
+      {cobrarProximos.length > 0 && (
+        <div className="mb-8 rounded-2xl border border-gold/50 bg-gold/10 p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-serif text-lg text-ink">
+              💰 Servicios por cobrar — {formatCOP(totalPorCobrar)}
+            </h2>
+            <Link href="/admin/cuentas-por-cobrar" className="text-sm font-medium text-rose hover:underline">
+              Gestionar →
+            </Link>
+          </div>
+          <ul className="space-y-2 text-sm">
+            {cobrarProximos.slice(0, 5).map((g: any, i: number) => {
+              const etiqueta =
+                g.dias < 0
+                  ? `Vencido hace ${Math.abs(g.dias)} día(s)`
+                  : g.dias === 0
+                    ? "¡Vence hoy!"
+                    : g.dias === 9999
+                      ? "Sin fecha"
+                      : `En ${g.dias} día(s)`;
+              return (
+                <li key={`${g.cliente_nombre}-${i}`} className="flex items-center justify-between gap-3">
+                  <span>
+                    <span className="font-medium text-ink">{g.cliente_nombre}</span>
+                    <span className="text-muted"> · debe {formatCOP(g.total)}</span>
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      g.dias <= 2 ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-800"
                     }`}
                   >
                     {etiqueta}
