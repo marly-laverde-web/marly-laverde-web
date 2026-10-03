@@ -226,10 +226,12 @@ export default function AdminCuentasPorCobrar({
           const abre = abriendo === g.clave;
           const abonosG = abonos.filter((a) => a.grupo_clave === g.clave);
           const mensaje =
-            `Hola ${primerNombre(g.cliente_nombre)}, te saludamos de Marly Laverde Estudio de Belleza. ` +
-            `Te recordamos tu pago pendiente de ${formatCOP(g.saldo)}` +
-            (g.fecha_pago_credito ? ` con fecha ${g.fecha_pago_credito}` : "") +
-            `. ¡Gracias! 🌸`;
+            `¡Hola ${primerNombre(g.cliente_nombre)}! 🌸\n\n` +
+            `Te saludamos con cariño de Marly Laverde Estudio de Belleza 💕\n\n` +
+            `Te recordamos amablemente tu saldo pendiente:\n` +
+            `💰 Valor: ${formatCOP(g.saldo)}\n` +
+            (g.fecha_pago_credito ? `📅 Fecha acordada: ${g.fecha_pago_credito}\n` : "") +
+            `\n¡Mil gracias por tu confianza y preferencia! 🤗💖`;
           return (
             <div key={g.clave} className="rounded-2xl border border-line bg-white/70 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">

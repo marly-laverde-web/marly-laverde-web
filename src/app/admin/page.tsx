@@ -225,7 +225,7 @@ export default async function DashboardPage() {
                     <a
                       href={waLinkTelefono(
                         c.telefono,
-                        `¡Feliz cumpleaños ${primerNombre(c.nombre)}! 🎉 Te deseamos un día maravilloso de parte de ${site.nombre}. 💗`
+                        `¡Feliz cumpleaños ${primerNombre(c.nombre)}! 🎉🎂✨\n\nEn ${site.nombre} te deseamos un día lleno de alegría, amor y muchas bendiciones 💕\n\nQue cumplas muchos más y sigas tan hermosa como siempre 💅👑\n\n¡Te queremos mucho! 🥳🌸`
                       )}
                       target="_blank"
                       rel="noopener noreferrer"
