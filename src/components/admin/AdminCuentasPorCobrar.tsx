@@ -4,8 +4,11 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatCOP } from "@/lib/format";
 import { MEDIOS_PAGO, ETIQUETA_MEDIO, type MedioPago } from "@/lib/tipos";
-import { waLinkTelefono } from "@/data/config";
-import { marcarCreditoPagado } from "@/app/admin/ventas/acciones";
+import { waLinkTelefono, primerNombre } from "@/data/config";
+import {
+  registrarAbonoCredito,
+  eliminarAbonoCredito,
+} from "@/app/admin/ventas/acciones";
 import EncabezadoAdmin from "./EncabezadoAdmin";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -25,29 +28,47 @@ interface Grupo {
   cliente_telefono: string;
   fecha_pago_credito: string | null;
   items: any[];
+  ventaIds: string[];
   total: number;
+  abonado: number;
+  saldo: number;
   dias: number;
+  pagada: boolean;
 }
 
 export default function AdminCuentasPorCobrar({
   ventas,
+  abonos,
   hoy,
 }: {
   ventas: any[];
+  abonos: any[];
   hoy: string;
 }) {
   const router = useRouter();
   const [verPagadas, setVerPagadas] = useState(false);
-  const [pagando, setPagando] = useState<string | null>(null);
-  const [medio, setMedio] = useState<MedioPago>("efectivo");
-  const [fechaPago, setFechaPago] = useState(hoy);
+  const [abriendo, setAbriendo] = useState<string | null>(null);
 
-  // Agrupar los ítems de una misma deuda (misma cita, o misma clienta + fecha)
-  function agrupar(filas: any[]): Grupo[] {
+  // Formulario de abono
+  const [aFecha, setAFecha] = useState(hoy);
+  const [aValor, setAValor] = useState("");
+  const [aMedio, setAMedio] = useState<MedioPago>("efectivo");
+  const [aNotas, setANotas] = useState("");
+
+  function claveDe(v: any) {
+    return v.cita_id ?? `${v.cliente_nombre}__${v.fecha_pago_credito ?? "s/f"}`;
+  }
+
+  function abonadoDe(clave: string) {
+    return abonos
+      .filter((a) => a.grupo_clave === clave)
+      .reduce((s, a) => s + (a.valor ?? 0), 0);
+  }
+
+  const grupos = useMemo<Grupo[]>(() => {
     const mapa = new Map<string, Grupo>();
-    for (const v of filas) {
-      const clave =
-        v.cita_id ?? `${v.cliente_nombre}__${v.fecha_pago_credito ?? "s/f"}`;
+    for (const v of ventas) {
+      const clave = claveDe(v);
       let g = mapa.get(clave);
       if (!g) {
         g = {
@@ -56,31 +77,34 @@ export default function AdminCuentasPorCobrar({
           cliente_telefono: v.cliente_telefono ?? "",
           fecha_pago_credito: v.fecha_pago_credito ?? null,
           items: [],
+          ventaIds: [],
           total: 0,
+          abonado: 0,
+          saldo: 0,
           dias: diasHasta(v.fecha_pago_credito ?? null, hoy),
+          pagada: true,
         };
         mapa.set(clave, g);
       }
       g.items.push(v);
+      g.ventaIds.push(v.id);
       g.total += v.total ?? 0;
+      if (!v.credito_pagado) g.pagada = false;
+    }
+    for (const g of mapa.values()) {
+      g.abonado = abonadoDe(g.clave);
+      g.saldo = Math.max(0, g.total - g.abonado);
     }
     return [...mapa.values()];
-  }
-
-  const pendientes = useMemo(
-    () => agrupar(ventas.filter((v) => !v.credito_pagado)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ventas, hoy]
-  );
-  const pagadas = useMemo(
-    () => agrupar(ventas.filter((v) => v.credito_pagado)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ventas, hoy]
-  );
+  }, [ventas, abonos, hoy]);
 
-  pendientes.sort((a, b) => a.dias - b.dias);
+  const pendientes = grupos
+    .filter((g) => !g.pagada)
+    .sort((a, b) => a.dias - b.dias);
+  const pagadas = grupos.filter((g) => g.pagada);
 
-  const totalPorCobrar = pendientes.reduce((s, g) => s + g.total, 0);
+  const totalPorCobrar = pendientes.reduce((s, g) => s + g.saldo, 0);
   const nPendientes = pendientes.length;
   const nVencidas = pendientes.filter((g) => g.dias < 0).length;
 
@@ -101,18 +125,38 @@ export default function AdminCuentasPorCobrar({
     return { texto: `En ${g.dias} días`, clase: "bg-green-100 text-green-700" };
   }
 
-  async function registrarPago(g: Grupo) {
-    setPagando(null);
-    for (const item of g.items) {
-      const res = await marcarCreditoPagado(item.id, medio, fechaPago);
-      if (!res.ok) {
-        alert(res.error);
-        return;
-      }
-    }
-    setMedio("efectivo");
-    setFechaPago(hoy);
-    router.refresh();
+  function abrir(g: Grupo) {
+    setAbriendo(g.clave);
+    setAFecha(hoy);
+    setAValor(String(g.saldo)); // por defecto, el saldo completo
+    setAMedio("efectivo");
+    setANotas("");
+  }
+
+  async function registrar(g: Grupo) {
+    if (!aValor || Number(aValor) <= 0) return;
+    const res = await registrarAbonoCredito({
+      grupoClave: g.clave,
+      clienteNombre: g.cliente_nombre,
+      ventaIds: g.ventaIds,
+      fecha: aFecha,
+      valor: Number(aValor),
+      medio: aMedio,
+      notas: aNotas,
+    });
+    if (res.ok) {
+      setAbriendo(null);
+      setAValor("");
+      setANotas("");
+      router.refresh();
+    } else alert(res.error);
+  }
+
+  async function borrarAbono(g: Grupo, abonoId: string) {
+    if (!confirm("¿Eliminar este abono?")) return;
+    const res = await eliminarAbonoCredito(abonoId, g.clave, g.ventaIds);
+    if (res.ok) router.refresh();
+    else alert(res.error);
   }
 
   const input =
@@ -124,7 +168,7 @@ export default function AdminCuentasPorCobrar({
     <div>
       <EncabezadoAdmin
         titulo="Cuentas por cobrar"
-        descripcion="Servicios y productos que las clientas quedaron debiendo (ventas a crédito)."
+        descripcion="Servicios y productos que las clientas quedaron debiendo (ventas a crédito). Puedes registrar abonos parciales."
       />
 
       {/* Resumen */}
@@ -179,10 +223,11 @@ export default function AdminCuentasPorCobrar({
         )}
         {lista.map((g) => {
           const s = semaforo(g);
-          const abre = pagando === g.clave;
+          const abre = abriendo === g.clave;
+          const abonosG = abonos.filter((a) => a.grupo_clave === g.clave);
           const mensaje =
-            `Hola ${g.cliente_nombre}, te saludamos de Marly Laverde Estudio de Belleza. ` +
-            `Te recordamos tu pago pendiente de ${formatCOP(g.total)}` +
+            `Hola ${primerNombre(g.cliente_nombre)}, te saludamos de Marly Laverde Estudio de Belleza. ` +
+            `Te recordamos tu pago pendiente de ${formatCOP(g.saldo)}` +
             (g.fecha_pago_credito ? ` con fecha ${g.fecha_pago_credito}` : "") +
             `. ¡Gracias! 🌸`;
           return (
@@ -201,17 +246,14 @@ export default function AdminCuentasPorCobrar({
                       Pago acordado: <strong className="text-ink">{g.fecha_pago_credito}</strong>
                     </p>
                   )}
-                  {verPagadas && g.items[0]?.credito_pago_fecha && (
-                    <p className="mt-1 text-xs text-green-700">
-                      Pagado el {g.items[0].credito_pago_fecha}
-                      {g.items[0].credito_medio_pago
-                        ? ` · ${ETIQUETA_MEDIO[g.items[0].credito_medio_pago] ?? g.items[0].credito_medio_pago}`
-                        : ""}
-                    </p>
-                  )}
                 </div>
                 <div className="text-right">
-                  <p className="font-serif text-xl text-rose-dark">{formatCOP(g.total)}</p>
+                  <p className="font-serif text-xl text-rose-dark">{formatCOP(g.saldo)}</p>
+                  {g.abonado > 0 && (
+                    <p className="text-xs text-muted">
+                      de {formatCOP(g.total)} · abonado {formatCOP(g.abonado)}
+                    </p>
+                  )}
                   {!verPagadas && (
                     <span className={`mt-1 inline-block rounded-full px-3 py-1 text-xs font-semibold ${s.clase}`}>
                       {s.texto}
@@ -220,17 +262,36 @@ export default function AdminCuentasPorCobrar({
                 </div>
               </div>
 
+              {/* Historial de abonos */}
+              {abonosG.length > 0 && (
+                <ul className="mt-3 space-y-1 rounded-xl border border-line bg-white/60 p-3 text-sm">
+                  {abonosG.map((a) => (
+                    <li key={a.id} className="flex items-center justify-between border-b border-line/40 py-1 last:border-0">
+                      <span className="text-muted">
+                        {a.fecha} · {ETIQUETA_MEDIO[a.medio_pago] ?? a.medio_pago}
+                        {a.notas ? ` · ${a.notas}` : ""}
+                      </span>
+                      <span className="flex items-center gap-3">
+                        <span className="font-medium text-green-700">{formatCOP(a.valor)}</span>
+                        <button
+                          onClick={() => borrarAbono(g, a.id)}
+                          className="text-xs text-rose-dark hover:underline"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
               {!verPagadas && (
                 <div className="mt-3 flex flex-wrap gap-3 text-xs">
                   <button
-                    onClick={() => {
-                      setPagando(abre ? null : g.clave);
-                      setMedio("efectivo");
-                      setFechaPago(hoy);
-                    }}
+                    onClick={() => (abre ? setAbriendo(null) : abrir(g))}
                     className="font-medium text-rose hover:underline"
                   >
-                    {abre ? "Cancelar" : "Registrar pago"}
+                    {abre ? "Cancelar" : "Registrar abono / pago"}
                   </button>
                   {g.cliente_telefono && (
                     <a
@@ -248,10 +309,21 @@ export default function AdminCuentasPorCobrar({
               {abre && (
                 <div className="mt-3 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-white/70 p-3">
                   <div>
+                    <label className="mb-1 block text-xs text-muted">Valor del abono</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={aValor}
+                      onChange={(e) => setAValor(e.target.value)}
+                      className={`${input} w-32`}
+                      placeholder="Valor"
+                    />
+                  </div>
+                  <div>
                     <label className="mb-1 block text-xs text-muted">¿Cómo pagó?</label>
                     <select
-                      value={medio}
-                      onChange={(e) => setMedio(e.target.value as MedioPago)}
+                      value={aMedio}
+                      onChange={(e) => setAMedio(e.target.value as MedioPago)}
                       className={input}
                     >
                       {MEDIOS_PAGO.map((m) => (
@@ -262,20 +334,33 @@ export default function AdminCuentasPorCobrar({
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-muted">Fecha del pago</label>
+                    <label className="mb-1 block text-xs text-muted">Fecha</label>
                     <input
                       type="date"
-                      value={fechaPago}
-                      onChange={(e) => setFechaPago(e.target.value)}
+                      value={aFecha}
+                      onChange={(e) => setAFecha(e.target.value)}
                       className={input}
                     />
                   </div>
+                  <div className="min-w-[8rem] flex-1">
+                    <label className="mb-1 block text-xs text-muted">Nota (opcional)</label>
+                    <input
+                      value={aNotas}
+                      onChange={(e) => setANotas(e.target.value)}
+                      className={`${input} w-full`}
+                    />
+                  </div>
                   <button
-                    onClick={() => registrarPago(g)}
+                    onClick={() => registrar(g)}
                     className="btn-primario !py-2 !text-xs"
                   >
-                    Confirmar pago de {formatCOP(g.total)}
+                    Guardar abono
                   </button>
+                  {Number(aValor) >= g.saldo && g.saldo > 0 && (
+                    <p className="w-full text-xs text-green-700">
+                      ✓ Este abono salda la deuda por completo.
+                    </p>
+                  )}
                 </div>
               )}
             </div>

@@ -116,6 +116,98 @@ export async function marcarCreditoPagado(
   return { ok: true };
 }
 
+function revalidarCredito() {
+  revalidatePath("/admin/cuentas-por-cobrar");
+  revalidatePath("/admin/ventas");
+  revalidatePath("/admin/reportes");
+  revalidatePath("/admin");
+}
+
+/**
+ * Recalcula si una deuda a crédito ya quedó saldada con sus abonos.
+ * Si lo abonado cubre el total, marca las ventas del grupo como pagadas.
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+async function sincronizarEstadoCredito(
+  supabase: any,
+  grupoClave: string,
+  ventaIds: string[]
+) {
+  if (ventaIds.length === 0) return;
+  const { data: ventas } = await supabase
+    .from("ventas")
+    .select("total")
+    .in("id", ventaIds);
+  const total = (ventas ?? []).reduce((s: number, v: any) => s + (v.total ?? 0), 0);
+
+  const { data: abonos } = await supabase
+    .from("abonos_credito")
+    .select("valor, fecha, medio_pago")
+    .eq("grupo_clave", grupoClave)
+    .order("fecha", { ascending: false });
+  const abonado = (abonos ?? []).reduce((s: number, a: any) => s + (a.valor ?? 0), 0);
+
+  const pagado = total > 0 && abonado >= total;
+  const ultimo = (abonos ?? [])[0];
+
+  await supabase
+    .from("ventas")
+    .update({
+      credito_pagado: pagado,
+      credito_pago_fecha: pagado ? ultimo?.fecha ?? null : null,
+      credito_medio_pago: pagado ? ultimo?.medio_pago ?? null : null,
+    })
+    .in("id", ventaIds);
+}
+
+/** Registra un abono a una deuda a crédito (reduce el saldo pendiente). */
+export async function registrarAbonoCredito(d: {
+  grupoClave: string;
+  clienteNombre: string;
+  ventaIds: string[];
+  fecha: string;
+  valor: number;
+  medio: MedioPago;
+  notas: string;
+}): Promise<Respuesta> {
+  const { supabase, user } = await clienteAutenticado();
+  if (!user) return { ok: false, error: "No autorizado" };
+  if (!d.fecha) return { ok: false, error: "Indica la fecha del abono." };
+  if (!d.valor || d.valor <= 0)
+    return { ok: false, error: "Escribe un valor de abono válido." };
+
+  const { error } = await supabase.from("abonos_credito").insert({
+    grupo_clave: d.grupoClave,
+    cliente_nombre: d.clienteNombre,
+    fecha: d.fecha,
+    valor: d.valor,
+    medio_pago: d.medio,
+    notas: d.notas.trim(),
+  });
+  if (error) return { ok: false, error: "No se pudo registrar el abono." };
+
+  await sincronizarEstadoCredito(supabase, d.grupoClave, d.ventaIds);
+  revalidarCredito();
+  return { ok: true };
+}
+
+/** Elimina un abono y recalcula el saldo de la deuda. */
+export async function eliminarAbonoCredito(
+  id: string,
+  grupoClave: string,
+  ventaIds: string[]
+): Promise<Respuesta> {
+  const { supabase, user } = await clienteAutenticado();
+  if (!user) return { ok: false, error: "No autorizado" };
+
+  const { error } = await supabase.from("abonos_credito").delete().eq("id", id);
+  if (error) return { ok: false, error: "No se pudo eliminar el abono." };
+
+  await sincronizarEstadoCredito(supabase, grupoClave, ventaIds);
+  revalidarCredito();
+  return { ok: true };
+}
+
 export async function eliminarVenta(id: string): Promise<Respuesta> {
   const { supabase, user } = await clienteAutenticado();
   if (!user) return { ok: false, error: "No autorizado" };

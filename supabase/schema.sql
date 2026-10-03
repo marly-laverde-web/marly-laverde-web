@@ -195,6 +195,19 @@ create table if not exists abonos (
 );
 create index if not exists idx_abonos_factura on abonos (factura_id);
 
+-- Abonos a cuentas por cobrar (ventas a crédito)
+create table if not exists abonos_credito (
+  id uuid primary key default gen_random_uuid(),
+  grupo_clave text not null,
+  cliente_nombre text default '',
+  fecha date not null,
+  valor integer not null,
+  medio_pago text not null default 'efectivo',
+  notas text default '',
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_abonos_credito_grupo on abonos_credito (grupo_clave);
+
 -- ---------------------------------------------------------------
 --  SEGURIDAD (Row Level Security)
 -- ---------------------------------------------------------------
@@ -211,6 +224,7 @@ alter table clientes      enable row level security;
 alter table compras         enable row level security;
 alter table facturas_pagar  enable row level security;
 alter table abonos          enable row level security;
+alter table abonos_credito  enable row level security;
 alter table profesionales   enable row level security;
 
 -- Lectura pública (catálogos y horarios los ve todo el mundo)
@@ -235,6 +249,7 @@ create policy "admin clientes"       on clientes      for all using (auth.role()
 create policy "admin compras"        on compras       for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "admin facturas_pagar" on facturas_pagar for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "admin abonos"         on abonos        for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "admin abonos_credito" on abonos_credito for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "admin profesionales"  on profesionales for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 -- (Las citas creadas por clientas se insertan desde el servidor con la clave de
 --  servicio, que omite RLS de forma segura. Por eso no hay política anónima.)

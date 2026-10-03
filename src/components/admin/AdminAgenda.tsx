@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { site, waLinkTelefono } from "@/data/config";
+import { site, waLinkTelefono, primerNombre } from "@/data/config";
 import { formatDuracion, formatCOP } from "@/lib/format";
 import {
   ESTADOS_CITA,
@@ -458,7 +458,7 @@ export default function AdminAgenda({
                     <a
                       href={waLinkTelefono(
                         c.cliente_telefono,
-                        `¡Hola ${c.cliente_nombre}! Te escribimos de ${site.nombre} ${site.subtitulo} para recordarte que tienes agendada una cita de ${c.servicio_nombre} el ${fechaLegible(
+                        `¡Hola ${primerNombre(c.cliente_nombre)}! Te escribimos de ${site.nombre} ${site.subtitulo} para recordarte que tienes agendada una cita de ${c.servicio_nombre} el ${fechaLegible(
                           c.fecha
                         )} a las ${hhmm(c.hora_inicio)}. ¡Te esperamos! 💗`
                       )}

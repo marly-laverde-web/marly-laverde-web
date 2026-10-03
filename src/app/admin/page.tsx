@@ -3,7 +3,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { ahoraColombia } from "@/lib/disponibilidad";
 import { formatCOP } from "@/lib/format";
 import { ESTADOS_CITA, NOMBRES_DIAS } from "@/lib/tipos";
-import { site, waLinkTelefono } from "@/data/config";
+import { site, waLinkTelefono, primerNombre } from "@/data/config";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +60,7 @@ export default async function DashboardPage() {
     { data: facturasPend },
     { data: abonosAll },
     { data: creditosPend },
+    { data: abonosCredito },
   ] = await Promise.all([
     supabase.from("citas").select("*").eq("fecha", hoy).order("hora_inicio"),
     supabase
@@ -90,6 +91,7 @@ export default async function DashboardPage() {
       .select("cliente_nombre, total, fecha_pago_credito, cita_id")
       .eq("medio_pago", "credito")
       .eq("credito_pagado", false),
+    supabase.from("abonos_credito").select("grupo_clave, valor"),
   ]);
 
   // Cuentas por pagar próximas a vencer (≤7 días) o vencidas, con saldo
@@ -110,10 +112,17 @@ export default async function DashboardPage() {
   const totalPorPagar = cuentasProximas.reduce((s: number, f: any) => s + f.saldo, 0);
 
   // Cuentas por cobrar (ventas a crédito) próximas a vencer (≤7 días) o vencidas
+  const abonadoCredito = new Map<string, number>();
+  for (const a of abonosCredito ?? [])
+    abonadoCredito.set(
+      a.grupo_clave,
+      (abonadoCredito.get(a.grupo_clave) ?? 0) + (a.valor ?? 0)
+    );
   const cobrarPorGrupo = new Map<string, any>();
   for (const v of creditosPend ?? []) {
     const clave = v.cita_id ?? `${v.cliente_nombre}__${v.fecha_pago_credito ?? "s/f"}`;
     const g = cobrarPorGrupo.get(clave) ?? {
+      clave,
       cliente_nombre: v.cliente_nombre ?? "Clienta",
       fecha_pago_credito: v.fecha_pago_credito ?? null,
       total: 0,
@@ -123,9 +132,13 @@ export default async function DashboardPage() {
     cobrarPorGrupo.set(clave, g);
   }
   const cobrarProximos = [...cobrarPorGrupo.values()]
-    .filter((g: any) => g.dias <= 7)
+    .map((g: any) => ({
+      ...g,
+      saldo: Math.max(0, g.total - (abonadoCredito.get(g.clave) ?? 0)),
+    }))
+    .filter((g: any) => g.saldo > 0 && g.dias <= 7)
     .sort((a: any, b: any) => a.dias - b.dias);
-  const totalPorCobrar = cobrarProximos.reduce((s: number, g: any) => s + g.total, 0);
+  const totalPorCobrar = cobrarProximos.reduce((s: number, g: any) => s + g.saldo, 0);
 
   // Cumpleaños en los próximos 7 días
   const cumpleProximos = (clientesCumple ?? [])
@@ -212,7 +225,7 @@ export default async function DashboardPage() {
                     <a
                       href={waLinkTelefono(
                         c.telefono,
-                        `¡Feliz cumpleaños ${c.nombre}! 🎉 Te deseamos un día maravilloso de parte de ${site.nombre}. 💗`
+                        `¡Feliz cumpleaños ${primerNombre(c.nombre)}! 🎉 Te deseamos un día maravilloso de parte de ${site.nombre}. 💗`
                       )}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -292,7 +305,7 @@ export default async function DashboardPage() {
                 <li key={`${g.cliente_nombre}-${i}`} className="flex items-center justify-between gap-3">
                   <span>
                     <span className="font-medium text-ink">{g.cliente_nombre}</span>
-                    <span className="text-muted"> · debe {formatCOP(g.total)}</span>
+                    <span className="text-muted"> · debe {formatCOP(g.saldo)}</span>
                   </span>
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-semibold ${

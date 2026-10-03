@@ -9,11 +9,23 @@ export default async function CuentasPorCobrarPage() {
   const hoy = ahoraColombia().fecha;
 
   // Ventas a crédito (servicios/productos que las clientas quedaron debiendo)
-  const { data: ventas } = await supabase
-    .from("ventas")
-    .select("*")
-    .eq("medio_pago", "credito")
-    .order("fecha_pago_credito", { ascending: true });
+  const [{ data: ventas }, { data: abonos }] = await Promise.all([
+    supabase
+      .from("ventas")
+      .select("*")
+      .eq("medio_pago", "credito")
+      .order("fecha_pago_credito", { ascending: true }),
+    supabase
+      .from("abonos_credito")
+      .select("*")
+      .order("fecha", { ascending: false }),
+  ]);
 
-  return <AdminCuentasPorCobrar ventas={ventas ?? []} hoy={hoy} />;
+  return (
+    <AdminCuentasPorCobrar
+      ventas={ventas ?? []}
+      abonos={abonos ?? []}
+      hoy={hoy}
+    />
+  );
 }

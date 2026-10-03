@@ -67,6 +67,11 @@ export function waLinkTelefono(telefono: string, mensaje?: string): string {
   return `${base}?text=${encodeURIComponent(mensaje)}`;
 }
 
+/** Devuelve solo el primer nombre (p. ej. "Ingrid Rincón" → "Ingrid"). */
+export function primerNombre(nombre?: string | null): string {
+  return (nombre || "").trim().split(/\s+/)[0] || "";
+}
+
 /** Mensaje genérico para el botón flotante y CTAs principales. */
 export const mensajeWhatsAppGeneral =
   "¡Hola Marly Laverde Estudio de Belleza! 👋 Me gustaría recibir información sobre sus servicios.";
