@@ -3,7 +3,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { ahoraColombia } from "@/lib/disponibilidad";
 import { formatCOP } from "@/lib/format";
 import { ESTADOS_CITA, NOMBRES_DIAS } from "@/lib/tipos";
-import { site, waLinkTelefono, primerNombre } from "@/data/config";
+import { site, waLinkTelefono, primerNombre, emoji } from "@/data/config";
 
 export const dynamic = "force-dynamic";
 
@@ -225,7 +225,7 @@ export default async function DashboardPage() {
                     <a
                       href={waLinkTelefono(
                         c.telefono,
-                        `¡Feliz cumpleaños ${primerNombre(c.nombre)}! 🎉🎂✨\n\nEn ${site.nombre} te deseamos un día lleno de alegría, amor y muchas bendiciones 💕\n\nQue cumplas muchos más y sigas tan hermosa como siempre 💅👑\n\n¡Te queremos mucho! 🥳🌸`
+                        `¡Feliz cumpleaños ${primerNombre(c.nombre)}! ${emoji.fiesta}${emoji.pastel}${emoji.destellos}\n\nEn ${site.nombre} te deseamos un día lleno de alegría, amor y muchas bendiciones ${emoji.corazon}\n\nQue cumplas muchos más y sigas tan hermosa como siempre ${emoji.unas}${emoji.corona}\n\n¡Te queremos mucho! ${emoji.festejo}${emoji.flor}`
                       )}
                       target="_blank"
                       rel="noopener noreferrer"

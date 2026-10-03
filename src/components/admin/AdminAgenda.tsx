@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { site, waLinkTelefono, primerNombre } from "@/data/config";
+import { site, waLinkTelefono, primerNombre, emoji } from "@/data/config";
 import { formatDuracion, formatCOP } from "@/lib/format";
 import {
   ESTADOS_CITA,
@@ -458,9 +458,9 @@ export default function AdminAgenda({
                     <a
                       href={waLinkTelefono(
                         c.cliente_telefono,
-                        `¡Hola ${primerNombre(c.cliente_nombre)}! 🌸✨\n\nTe saludamos con mucho cariño de ${site.nombre} 💕\n\nTe recordamos tu próxima cita:\n💅 Servicio: ${c.servicio_nombre}\n📅 Fecha: ${fechaLegible(
+                        `¡Hola ${primerNombre(c.cliente_nombre)}! ${emoji.flor}${emoji.destellos}\n\nTe saludamos con mucho cariño de ${site.nombre} ${emoji.corazon}\n\nTe recordamos tu próxima cita:\n${emoji.unas} Servicio: ${c.servicio_nombre}\n${emoji.calendario} Fecha: ${fechaLegible(
                           c.fecha
-                        )}\n⏰ Hora: ${hhmm(c.hora_inicio)}\n\n¡Será un gusto consentirte! Te esperamos 🤗💖`
+                        )}\n${emoji.reloj} Hora: ${hhmm(c.hora_inicio)}\n\n¡Será un gusto consentirte! Te esperamos ${emoji.abrazo}${emoji.corazonBrillante}`
                       )}
                       target="_blank"
                       rel="noopener noreferrer"

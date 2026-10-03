@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatCOP } from "@/lib/format";
 import { MEDIOS_PAGO, ETIQUETA_MEDIO, type MedioPago } from "@/lib/tipos";
-import { waLinkTelefono, primerNombre } from "@/data/config";
+import { waLinkTelefono, primerNombre, emoji } from "@/data/config";
 import {
   registrarAbonoCredito,
   eliminarAbonoCredito,
@@ -226,12 +226,12 @@ export default function AdminCuentasPorCobrar({
           const abre = abriendo === g.clave;
           const abonosG = abonos.filter((a) => a.grupo_clave === g.clave);
           const mensaje =
-            `¡Hola ${primerNombre(g.cliente_nombre)}! 🌸\n\n` +
-            `Te saludamos con cariño de Marly Laverde Estudio de Belleza 💕\n\n` +
+            `¡Hola ${primerNombre(g.cliente_nombre)}! ${emoji.flor}\n\n` +
+            `Te saludamos con cariño de Marly Laverde Estudio de Belleza ${emoji.corazon}\n\n` +
             `Te recordamos amablemente tu saldo pendiente:\n` +
-            `💰 Valor: ${formatCOP(g.saldo)}\n` +
-            (g.fecha_pago_credito ? `📅 Fecha acordada: ${g.fecha_pago_credito}\n` : "") +
-            `\n¡Mil gracias por tu confianza y preferencia! 🤗💖`;
+            `${emoji.dinero} Valor: ${formatCOP(g.saldo)}\n` +
+            (g.fecha_pago_credito ? `${emoji.calendario} Fecha acordada: ${g.fecha_pago_credito}\n` : "") +
+            `\n¡Mil gracias por tu confianza y preferencia! ${emoji.abrazo}${emoji.corazonBrillante}`;
           return (
             <div key={g.clave} className="rounded-2xl border border-line bg-white/70 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">

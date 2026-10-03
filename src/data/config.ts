@@ -72,6 +72,26 @@ export function primerNombre(nombre?: string | null): string {
   return (nombre || "").trim().split(/\s+/)[0] || "";
 }
 
+/**
+ * Emojis escritos como secuencias de escape ASCII para evitar que se dañen
+ * (aparezcan como "�") por problemas de codificación en el editor o el build.
+ */
+export const emoji = {
+  flor: "\u{1F338}", // 🌸
+  destellos: "\u{2728}", // ✨
+  corazon: "\u{1F495}", // 💕
+  corazonBrillante: "\u{1F496}", // 💖
+  unas: "\u{1F485}", // 💅
+  calendario: "\u{1F4C5}", // 📅
+  reloj: "\u{23F0}", // ⏰
+  abrazo: "\u{1F917}", // 🤗
+  fiesta: "\u{1F389}", // 🎉
+  pastel: "\u{1F382}", // 🎂
+  corona: "\u{1F451}", // 👑
+  festejo: "\u{1F973}", // 🥳
+  dinero: "\u{1F4B0}", // 💰
+};
+
 /** Mensaje genérico para el botón flotante y CTAs principales. */
 export const mensajeWhatsAppGeneral =
   "¡Hola Marly Laverde Estudio de Belleza! 👋 Me gustaría recibir información sobre sus servicios.";
