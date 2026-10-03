@@ -48,23 +48,27 @@ export const site = {
 /**
  * Construye un enlace de WhatsApp con un mensaje ya escrito.
  * Uso: waLink("Hola, quiero información sobre colorimetría")
+ *
+ * Nota: usamos api.whatsapp.com/send en vez de wa.me porque el
+ * redireccionamiento de wa.me daña los emojis de 4 bytes (los convierte en "�").
  */
 export function waLink(mensaje?: string): string {
-  const base = `https://wa.me/${site.whatsapp}`;
+  const base = `https://api.whatsapp.com/send?phone=${site.whatsapp}`;
   if (!mensaje) return base;
-  return `${base}?text=${encodeURIComponent(mensaje)}`;
+  return `${base}&text=${encodeURIComponent(mensaje)}`;
 }
 
 /**
  * Construye un enlace de WhatsApp hacia el número de una clienta.
  * Normaliza números colombianos (agrega 57 si hace falta).
+ * Usa api.whatsapp.com/send (no wa.me) para no dañar los emojis.
  */
 export function waLinkTelefono(telefono: string, mensaje?: string): string {
   let numero = (telefono || "").replace(/\D/g, "");
   if (numero.length === 10 && numero.startsWith("3")) numero = "57" + numero;
-  const base = `https://wa.me/${numero}`;
+  const base = `https://api.whatsapp.com/send?phone=${numero}`;
   if (!mensaje) return base;
-  return `${base}?text=${encodeURIComponent(mensaje)}`;
+  return `${base}&text=${encodeURIComponent(mensaje)}`;
 }
 
 /** Devuelve solo el primer nombre (p. ej. "Ingrid Rincón" → "Ingrid"). */
